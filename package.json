@@ -1,0 +1,71 @@
+{
+  "name": "@geut/fastify-uws",
+  "version": "0.0.1",
+  "description": "Template to create modules following the Geut path",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./src/index.js"
+    }
+  },
+  "workspaces": [
+    "tests/fastify/module",
+    "benchmarks"
+  ],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "start": "node index.js",
+    "build": "tsup src/**.js",
+    "test": "uvu --ignore tests/fastify",
+    "posttest": "npm run lint",
+    "lint": "standard",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "dependencies": {
+    "http-parser-js": "^0.5.8",
+    "ipaddr.js": "^2.0.1",
+    "streamx": "^2.12.5",
+    "tempy": "^1.0.1",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
+  },
+  "devDependencies": {
+    "fastify": "^4.6.0",
+    "require-inject": "^1.4.4",
+    "standard": "^17.0.0",
+    "tap": "^16.3.0",
+    "tsup": "^6.2.3",
+    "uvu": "^0.5.3"
+  },
+  "standard": {
+    "env": [
+      "node",
+      "browser"
+    ],
+    "ignore": [
+      "tests/fastify/**"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geut/fastify-uws.git"
+  },
+  "keywords": [
+    "create",
+    "geut",
+    "module"
+  ],
+  "author": {
+    "name": "GEUT",
+    "email": "contact@geutstudio.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/geut/fastify-uws/issues"
+  },
+  "homepage": "https://github.com/geut/fastify-uws#readme"
+}

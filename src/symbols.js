@@ -1,0 +1,5 @@
+export const kHttps = Symbol('https')
+export const kDisableRemoteAddress = Symbol('disableRemoteAddress')
+export const kReq = Symbol('req')
+export const kRes = Symbol('res')
+export const kServer = Symbol('server')
