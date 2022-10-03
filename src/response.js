@@ -1,67 +1,67 @@
 
-import { STATUS_CODES } from 'node:http'
+import { STATUS_CODES } from 'http'
 
 import { Writable } from 'streamx'
 
-import { kReq, kRes, kServer } from './symbols.js'
+import { HTTPResponse } from './http-socket.js'
+import { ERR_HEAD_SET } from './errors.js'
+import { kHeaders, kDestroyError } from './symbols.js'
 
-const kHeaders = Symbol('headers')
-const kWriteHead = Symbol('writeHead')
-const kEnded = Symbol('ended')
-const kTimer = Symbol('timer')
-const kQueue = Symbol('queue')
-const kTryFastEnd = Symbol('tryFastEnd')
-const kStarted = Symbol('started')
+let utcCache
 
-const EMPTY = Buffer.alloc(0)
+function utcDate () {
+  if (!utcCache) cache()
+  return utcCache
+}
 
+function cache () {
+  const d = new Date()
+  utcCache = d.toUTCString()
+  const timeout = setTimeout(resetCache, 1000 - d.getMilliseconds())
+  timeout.unref()
+}
+
+function resetCache () {
+  utcCache = undefined
+}
+
+class Header {
+  constructor (name, value) {
+    this.name = name
+    this.value = String(value)
+  }
+}
 export class Response extends Writable {
-  constructor (server, res, req, socket) {
-    super()
+  constructor (socket) {
+    super({
+      mapWritable: (data) => {
+        if (data?.isResponse) return data
+        const res = new HTTPResponse(data)
+        if (!res.end) {
+          res.end = this.contentLength !== null && this.contentLength === res.byteLength
+        }
+        this.writableEnded = res.end
+        return res
+      },
+      byteLength: (data) => {
+        return data.byteLength
+      }
+    })
 
-    this[kServer] = server
-    this[kRes] = res
-    this[kReq] = req
     this.socket = socket
     this.statusCode = 200
     this.headersSent = false
     this.chunked = false
     this.contentLength = null
+    this.writableEnded = false
+    this.sendDate = true
 
-    this[kHeaders] = new Map()
-    this[kEnded] = false
-    this[kTimer] = null
-    this[kQueue] = 0
-    this[kStarted] = false
+    this[kHeaders] = new Map([
+      ['date', new Header('Date', utcDate())]
+    ])
 
-    socket.once('aborted', () => {
-      this[kTimer] && clearTimeout(this[kTimer])
-      this.destroy()
-    })
-
-    socket.once('close', () => {
-      this[kTimer] && clearTimeout(this[kTimer])
-      this.setHeader('connection', 'close')
-      this.end()
-    })
-
-    this.once('error', err => {
-      socket.destroy(err)
-    })
-
-    // workaround to be compatible with nodejs ServerResponse
-    this.once('close', () => {
-      if (!this[kStarted]) this.emit('finish')
-    })
-
-    if (server.timeout) {
-      this[kTimer] = setTimeout(() => {
-        if (this[kEnded] === false && this.aborted === false && !this.destroyed && !this.destroying) {
-          this.socket.emit('timeout')
-          res.close()
-        }
-      }, server.timeout)
-    }
+    socket.once('close', () => this.destroy())
+    socket.once('aborted', () => this.emit('aborted'))
   }
 
   get aborted () {
@@ -70,6 +70,10 @@ export class Response extends Writable {
 
   get finished () {
     return this.destroyed
+  }
+
+  get status () {
+    return `${this.statusCode} ${this.statusMessage || STATUS_CODES[this.statusCode]}`
   }
 
   hasHeader (name) {
@@ -82,14 +86,15 @@ export class Response extends Writable {
 
   getHeaders () {
     const headers = {}
-    let header
-    for (header of this[kHeaders].values()) {
+    this[kHeaders].forEach(header => {
       headers[header.name] = header.value
-    }
+    })
     return headers
   }
 
   setHeader (name, value) {
+    if (this.headersSent) throw new ERR_HEAD_SET()
+
     const key = name.toLowerCase()
 
     if (key === 'content-length') {
@@ -102,10 +107,18 @@ export class Response extends Writable {
       return
     }
 
-    this[kHeaders].set(key, { value, name })
+    this[kHeaders].set(key, new Header(name, value))
+  }
+
+  removeHeader (name) {
+    if (this.headersSent) throw new ERR_HEAD_SET()
+
+    this[kHeaders].delete(name.toLowerCase())
   }
 
   writeHead (statusCode, statusMessage, headers) {
+    if (this.headersSent) throw new ERR_HEAD_SET()
+
     this.statusCode = statusCode
 
     if (typeof statusMessage === 'object') {
@@ -115,80 +128,43 @@ export class Response extends Writable {
     }
 
     if (headers) {
-      let key
-      for (key in headers) {
+      Object.keys(headers).forEach(key => {
         this.setHeader(key, headers[key])
-      }
+      })
     }
   }
 
   end (data) {
-    this[kTimer] && clearTimeout(this[kTimer])
-    return super.end(data || EMPTY)
+    if (this.writableEnded) return
+    return super.end(new HTTPResponse(data, true))
   }
 
-  write (data) {
-    const drained = super.write(data)
-    if (drained) this[kQueue]++
-    return drained
-  }
-
-  _open (cb) {
-    this[kStarted] = true
-    cb()
+  destroy (err) {
+    this[kDestroyError] = err
+    super.destroy(err)
   }
 
   _write (data, cb) {
-    if (this.aborted || this[kEnded] || this.destroyed || this.destroying) return cb()
+    if (this.aborted) return cb()
 
-    if ((this.contentLength !== null && this.contentLength === data.length) || this[kQueue] === 0) {
-      this[kTryFastEnd](data)
+    if (!this.headersSent) {
+      this.headersSent = true
+      data.headers = this[kHeaders]
+      data.status = this.status
+    }
+
+    if (data.end) {
+      this.socket.end(data)
       return cb()
     }
 
-    this[kQueue]--
-    this[kWriteHead]()
-    this[kRes].write(data)
-
-    cb()
-  }
-
-  _final (cb) {
-    if (this.aborted || this[kEnded]) return cb()
-    this[kTryFastEnd]()
+    this.socket.write(data)
     cb()
   }
 
   _destroy (cb) {
-    if (this.aborted || this[kEnded]) return cb()
-    this[kTimer] && clearTimeout(this[kTimer])
-    cb()
-  }
-
-  [kWriteHead] () {
-    if (this.aborted || this.headersSent) return
-    this.headersSent = true
-
-    const res = this[kRes]
-    const statusMessage = this.statusMessage || STATUS_CODES[this.statusCode]
-    res.writeStatus(`${this.statusCode} ${statusMessage}`)
-
-    let header
-    for (header of this[kHeaders].values()) {
-      res.writeHeader(header.name, String(header.value))
-    }
-  }
-
-  [kTryFastEnd] (data = EMPTY) {
-    this[kEnded] = true
-    const res = this[kRes]
-    if (this.headersSent) {
-      res.end(data)
-    } else {
-      res.cork(() => {
-        this[kWriteHead]()
-        res.end(data)
-      })
-    }
+    if (this.socket.destroyed || this.socket.destroying || this.aborted || this.writableEnded) return cb()
+    this.socket.once('close', cb)
+    this.socket.destroy(this[kDestroyError])
   }
 }

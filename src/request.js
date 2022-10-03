@@ -1,46 +1,29 @@
 import { Readable } from 'streamx'
 
-import { kReq, kRes, kServer } from './symbols.js'
-
-const kMethod = Symbol('method')
-const kUrl = Symbol('url')
-const kHeaders = Symbol('headers')
-const kEncoding = Symbol('encoding')
-
+import { kReq, kHeaders, kUrl, kDestroyError } from './symbols.js'
 export class Request extends Readable {
-  constructor (server, req, res, socket) {
+  constructor (req, socket, method) {
     super()
 
-    this[kServer] = server
     this.socket = socket
+    this.method = method
     this.httpVersion = '1.1'
+    this.readableEnded = false
     this[kReq] = req
-    this[kRes] = res
-    this[kMethod] = null
-    this[kUrl] = null
-    this[kHeaders] = null
-    this[kEncoding] = null
-    socket.once('aborted', () => {
-      this.destroy()
-    })
-    this.once('error', (err) => {
-      socket.destroy(err)
-    })
+    if (req.url) {
+      this[kUrl] = req.url
+      this[kHeaders] = req.headers
+    } else {
+      this[kUrl] = null
+      this[kHeaders] = null
+    }
+
+    socket.once('close', () => this.destroy())
+    socket.once('aborted', () => this.emit('aborted'))
   }
 
   get aborted () {
     return this.socket.aborted
-  }
-
-  get protocol () {
-    return 'https'
-  }
-
-  get method () {
-    let method = this[kMethod]
-    if (method) return method
-    method = this[kMethod] = this[kReq].getMethod().toUpperCase()
-    return method
   }
 
   get url () {
@@ -66,31 +49,48 @@ export class Request extends Readable {
   }
 
   setEncoding (encoding) {
-    this[kEncoding] = encoding
+    this.socket.setEncoding(encoding)
   }
 
-  _open (cb) {
-    const encoding = this[kEncoding]
-    this[kRes].onData((chunk, isLast) => {
-      if (this.destroyed || this.destroying) return
+  setTimeout (timeout) {
+    this.socket.setTimeout(timeout)
+  }
 
-      chunk = Buffer.from(chunk)
+  destroy (err) {
+    this[kDestroyError] = err
+    super.destroy(err)
+  }
 
-      if (encoding) {
-        chunk = chunk.toString(encoding)
-        if (this.receivedEncodedLength === undefined) {
-          this.receivedEncodedLength = chunk.length
-        } else {
-          this.receivedEncodedLength += chunk.length
-        }
+  _read (cb) {
+    const socket = this.socket
+    let closed = false
+
+    const onRead = () => {
+      if (closed || this.destroyed || this.destroying) return
+
+      const chunk = socket.read()
+
+      if (chunk) {
+        this.push(chunk)
+        return onRead()
       }
 
-      this.push(chunk)
-      if (isLast) {
-        this.push(null)
-      }
+      socket.once('readable', onRead)
+    }
+
+    socket.once('end', () => {
+      closed = true
+      this.readableEnded = true
+      this.push(null)
+      cb()
     })
 
-    cb()
+    onRead()
+  }
+
+  _destroy (cb) {
+    if (this.socket.destroyed || this.socket.destroying || this.aborted || this.readableEnded) return cb()
+    this.socket.once('close', cb)
+    this.socket.destroy(this[kDestroyError])
   }
 }

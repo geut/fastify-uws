@@ -1,7 +1,7 @@
 {
   "name": "@geut/fastify-uws",
   "version": "0.0.1",
-  "description": "Template to create modules following the Geut path",
+  "description": "uWebSockets.js for fastify",
   "type": "module",
   "main": "./dist/index.cjs",
   "exports": {
@@ -11,8 +11,7 @@
     }
   },
   "workspaces": [
-    "tests/fastify/module",
-    "benchmarks"
+    "tests/fastify/module"
   ],
   "files": [
     "dist",
@@ -27,8 +26,9 @@
     "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {
-    "http-parser-js": "^0.5.8",
+    "fastify-plugin": "^4.2.1",
     "ipaddr.js": "^2.0.1",
+    "nanoerror": "^1.2.1",
     "streamx": "^2.12.5",
     "tempy": "^1.0.1",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
@@ -55,9 +55,9 @@
     "url": "git+https://github.com/geut/fastify-uws.git"
   },
   "keywords": [
-    "create",
-    "geut",
-    "module"
+    "fastify",
+    "uWebSockets.js",
+    "fastify-plugin"
   ],
   "author": {
     "name": "GEUT",

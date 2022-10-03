@@ -10,21 +10,8 @@ const symbols = require('./module/lib/symbols.js')
 const FASTIFY_CWD = path.resolve(__dirname, 'module')
 
 // set on a test object directly, after creation
-const ignore = [
-  'framework-unsupported method',
-  'root framework-unsupported method',
-  'framework-unsupported method 2',
-  'framework-unsupported method 3',
-  'run hook with encapsulated 404 and framework-unsupported method',
-  'Unknown method',
-  'listen on socket',
-  'Current opened connection should continue to work after closing and return "connection: close" header - return503OnClosing: false',
-  'shutsdown while keep-alive connections are active (non-async, native)',
-  'shutsdown while keep-alive connections are active (non-async, idle, native)',
-  'shutsdown while keep-alive connections are active (non-async, custom)'
-]
 
-function requireTap () {
+function requireTap (ignore) {
   const t = requireInject.withEmptyCache('tap')
 
   function wrapTest (t) {
@@ -50,11 +37,13 @@ function requireTap () {
   return t
 }
 
-module.exports = async (serverFactory, tests) => {
+module.exports = async (serverFactory, opts = {}) => {
   const fastify = (opts = {}) => _fastify({
     ...opts,
     serverFactory
   })
+
+  const { tests, ignore } = opts
 
   // uwebsocket.js doesn't support chunked requests, yet
   const concatReadStream = async (opts = {}, cb) => {
@@ -97,7 +86,7 @@ module.exports = async (serverFactory, tests) => {
 
   try {
     for (const test of tests) {
-      const t = requireTap()
+      const t = requireTap(ignore)
       const done = once(t, 'end')
 
       requireInject(`./module/test/${test}.test.js`, {

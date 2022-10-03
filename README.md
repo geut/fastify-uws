@@ -1,5 +1,5 @@
 # fastify-uws
-Template to create modules following the :snail: **GEUT** path
+uWebSockets.js for fastify
 
 ![Tests](https://github.com/geut/fastify-uws/actions/workflows/test.yml/badge.svg)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg?style=flat)](https://standardjs.com)
@@ -10,11 +10,47 @@ Template to create modules following the :snail: **GEUT** path
 ## Install
 
 ```
+$ npm install @geut/fastify-uws
 ```
 
 ## Usage
 
-```
+```javascript
+import fastify from 'fastify'
+import { serverFactory, fastifyUws } from '@geut/fastify-uws'
+
+const app = fastify({
+  serverFactory
+})
+
+await app.register(fastifyUws)
+
+app.websocketServer.on('open', ws => {
+  console.log('OPEN')
+})
+
+app.websocketServer.on('close', ws => {
+  console.log('CLOSE')
+})
+
+app
+  .get('/', { ws: { topics: ['home/sensors/ligth', 'home/sensors/temp'] } }, async (req, reply) => {
+    if (!reply.ws) {
+      return 'hello from http endpoint'
+    }
+
+    reply.subscribe('home/sensors/temp')
+    reply.on('message', (message) => {
+      reply.publish('home/sensors/temp', 'random message')
+    })
+    reply.send(reply.getTopics())
+  })
+  .listen({
+    port: 3000
+  }, (err) => {
+    err && console.error(err)
+  })
+
 ```
 
 ## Issues
