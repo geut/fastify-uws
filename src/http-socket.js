@@ -132,13 +132,9 @@ export class HTTPSocket extends Duplex {
   }
 
   end (data) {
-    if (this.destroyed || this.destroying || this[kEnded] || this.writableEnded) return
-    this.writableEnded = true
-    if (data || this[kReadyState].write) {
-      super.end(data?.isResponse ? data : new HTTPResponse(data, true))
-    } else {
-      super.end()
-    }
+    if (this.destroyed || this.destroying || this[kEnded]) return super.end()
+    if (data || this[kReadyState].write) return super.end(data?.isResponse ? data : new HTTPResponse(data, true))
+    return super.end()
   }
 
   _predestroy () {

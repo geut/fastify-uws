@@ -40,7 +40,6 @@ export class Response extends Writable {
         if (!res.end) {
           res.end = this.contentLength !== null && this.contentLength === res.byteLength
         }
-        this.writableEnded = res.end
         return res
       },
       byteLength: (data) => {
@@ -135,7 +134,7 @@ export class Response extends Writable {
   }
 
   end (data) {
-    if (this.writableEnded) return
+    if (this.writableEnded) return super.end()
     return super.end(new HTTPResponse(data, true))
   }
 
@@ -146,6 +145,8 @@ export class Response extends Writable {
 
   _write (data, cb) {
     if (this.aborted) return cb()
+
+    this.writableEnded = data.end
 
     if (!this.headersSent) {
       this.headersSent = true
@@ -163,8 +164,8 @@ export class Response extends Writable {
   }
 
   _destroy (cb) {
-    if (this.socket.destroyed || this.socket.destroying || this.aborted || this.writableEnded) return cb()
+    if (this.socket.destroyed || this.socket.destroying || this.aborted) return cb()
     this.socket.once('close', cb)
-    this.socket.destroy(this[kDestroyError])
+    if (!this.writableEnded) this.socket.destroy(this[kDestroyError])
   }
 }
