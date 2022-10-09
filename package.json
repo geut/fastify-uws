@@ -67,5 +67,8 @@
   "bugs": {
     "url": "https://github.com/geut/fastify-uws/issues"
   },
-  "homepage": "https://github.com/geut/fastify-uws#readme"
+  "homepage": "https://github.com/geut/fastify-uws#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }
