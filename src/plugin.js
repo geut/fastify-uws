@@ -1,3 +1,5 @@
+// this plugin is inspired by https://github.com/fastify/fastify-websocket
+
 import fp from 'fastify-plugin'
 
 import { WebSocketServer, WebSocket } from './websocket-server.js'
