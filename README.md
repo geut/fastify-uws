@@ -43,7 +43,7 @@ app
     reply.on('message', (message) => {
       reply.publish('home/sensors/temp', 'random message')
     })
-    reply.send(JSON.string(reply.getTopics()))
+    reply.send(JSON.stringify({ hello: 'world' }))
   })
   .listen({
     port: 3000
