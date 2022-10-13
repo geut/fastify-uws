@@ -52,6 +52,54 @@ app
   })
 ```
 
+## Benchmarks
+
+Generated from: https://github.com/geut/benchmarks
+
+* __Machine:__ linux x64 | 2 vCPUs | 6.8GB Mem
+* __Node:__ `v14.20.1`
+* __Run:__ Thu Oct 13 2022 21:42:53 GMT+0000 (Coordinated Universal Time)
+* __Method:__ `autocannon -c 100 -d 40 -p 10 localhost:3000` (two rounds; one to warm-up, one to measure)
+
+|                          | Version | Router | Requests/s | Latency | Throughput/Mb |
+| :--                      | --:     | --:    | :-:        | --:     | --:           |
+| fastify-uws              | 0.0.5   | ✓      | 80122.8    | 12.00   | 12.00         |
+| bare                     | 10.13.0 | ✗      | 56154.4    | 17.32   | 10.01         |
+| polkadot                 | 1.0.0   | ✗      | 55499.2    | 17.52   | 9.90          |
+| polka                    | 0.5.2   | ✓      | 55183.2    | 17.64   | 9.84          |
+| foxify                   | 0.10.20 | ✓      | 55168.8    | 17.63   | 9.05          |
+| micro                    | 9.4.1   | ✗      | 55053.6    | 17.67   | 9.82          |
+| connect                  | 3.7.0   | ✗      | 55044.8    | 17.67   | 9.82          |
+| fastify                  | 4.8.1   | ✓      | 54933.6    | 17.71   | 9.85          |
+| 0http                    | 3.4.1   | ✓      | 54540.8    | 17.84   | 9.73          |
+| rayo                     | 1.3.10  | ✓      | 53823.2    | 18.09   | 9.60          |
+| server-base              | 7.1.32  | ✗      | 53657.6    | 18.14   | 9.57          |
+| server-base-router       | 7.1.32  | ✓      | 52456.8    | 18.56   | 9.36          |
+| yeps                     | 1.1.1   | ✗      | 49796.0    | 19.58   | 8.88          |
+| restana                  | 4.9.6   | ✓      | 48790.4    | 20.00   | 8.70          |
+| micro-route              | 2.5.0   | ✓      | 47211.2    | 20.69   | 8.42          |
+| connect-router           | 1.3.7   | ✓      | 46852.8    | 20.85   | 8.36          |
+| trek-engine              | 1.0.5   | ✗      | 46170.4    | 21.16   | 7.57          |
+| trek-router              | 1.2.0   | ✓      | 44349.8    | 22.05   | 7.27          |
+| vapr                     | 0.6.0   | ✓      | 43468.8    | 22.51   | 7.13          |
+| yeps-router              | 1.2.0   | ✓      | 40915.2    | 23.94   | 7.30          |
+| koa                      | 2.13.4  | ✗      | 39010.6    | 25.14   | 6.96          |
+| total.js                 | 3.4.13  | ✓      | 38128.8    | 25.73   | 11.67         |
+| spirit                   | 0.6.1   | ✗      | 37768.0    | 25.99   | 6.74          |
+| spirit-router            | 0.5.0   | ✓      | 37556.0    | 26.13   | 6.70          |
+| take-five                | 2.0.0   | ✓      | 36465.0    | 26.93   | 13.11         |
+| koa-isomorphic-router    | 1.0.1   | ✓      | 35757.4    | 27.47   | 6.38          |
+| restify                  | 8.6.1   | ✓      | 35377.8    | 27.77   | 6.38          |
+| koa-router               | 12.0.0  | ✓      | 33373.2    | 29.46   | 5.95          |
+| hapi                     | 20.2.2  | ✓      | 29162.8    | 33.79   | 5.20          |
+| microrouter              | 3.1.3   | ✓      | 28242.0    | 34.91   | 5.04          |
+| trpc-router              | 9.27.4  | ✓      | 24931.6    | 39.59   | 5.52          |
+| egg.js                   | 3.3.3   | ✓      | 18348.9    | 53.98   | 6.56          |
+| express                  | 4.18.2  | ✓      | 11994.8    | 82.81   | 2.14          |
+| express-with-middlewares | 4.18.2  | ✓      | 10532.1    | 94.37   | 3.92          |
+| express-route-prefix     | 4.18.2  | ✓      | 10291.0    | 96.63   | 3.81          |
+| fastify-big-json         | 4.8.1   | ✓      | 9940.1     | 100.11  | 114.37        |
+
 ## Issues
 
 :bug: If you found an issue we encourage you to report it on [github](https://github.com/geut/fastify-uws/issues). Please specify your OS and the actions to reproduce it.
