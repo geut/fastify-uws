@@ -151,6 +151,7 @@ export class HTTPSocket extends Duplex {
     if (!this[kWs] && !this.aborted && !this[kEnded]) {
       this[kRes].close()
     }
+    cb()
   }
 
   _read (cb) {

@@ -7,10 +7,20 @@ import {
   kRes
 } from './symbols.js'
 
+function defaultErrorHandler (err, request) {
+  request.log.error(err)
+  request.raw.destroy(err)
+}
+
 function fastifyUws (fastify, opts = {}, next) {
   const { server } = fastify
+  const { errorHandler = defaultErrorHandler, options } = opts
 
-  const websocketServer = server[kWs] = new WebSocketServer(opts.options)
+  if (errorHandler && typeof errorHandler !== 'function') {
+    return next(new Error('invalid errorHandler function'))
+  }
+
+  const websocketServer = server[kWs] = new WebSocketServer(options)
 
   fastify.decorate('websocketServer', websocketServer)
 
@@ -39,7 +49,30 @@ function fastifyUws (fastify, opts = {}, next) {
         uRes.upgrade({
           req: requestRaw,
           handler: (ws) => {
-            handler.call(this, request, new WebSocket(namespace, ws, request, topics))
+            const conn = new WebSocket(namespace, ws, topics)
+            let result
+            try {
+              request.log.info('fastify-uws: websocket connection opened')
+              conn.once('close', () => {
+                request.log.info('fastify-uws: websocket connection closed')
+              })
+
+              requestRaw.once('error', () => {
+                conn.close()
+              })
+
+              requestRaw.once('close', () => {
+                conn.end()
+              })
+
+              result = handler.call(this, request, conn)
+            } catch (err) {
+              return errorHandler.call(this, err, request, conn)
+            }
+
+            if (result && typeof result.catch === 'function') {
+              result.catch(err => errorHandler.call(this, err, request, conn))
+            }
           }
         },
         requestRaw.headers['sec-websocket-key'],

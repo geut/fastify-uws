@@ -8,7 +8,8 @@ import {
   kApp,
   kWs,
   kHandler,
-  kTopic
+  kTopic,
+  kEnded
 } from './symbols.js'
 
 const defaultWebSocketConfig = {
@@ -34,18 +35,14 @@ export class WebSocket extends EventEmitter {
     return buf
   }
 
-  constructor (namespace, connection, request, topics = {}) {
+  constructor (namespace, connection, topics = {}) {
     super()
 
     this.namespace = namespace
     this.connection = connection
     connection.websocket = this
-    this.request = request
     this.topics = topics // we maintain a cache of buffer topics
-    this.request.log.info('fastify-uws: websocket connection opened')
-    this.once('close', () => {
-      this.request.log.info('fastify-uws: websocket connection closed')
-    })
+    this[kEnded] = false
   }
 
   get ws () {
@@ -58,89 +55,60 @@ export class WebSocket extends EventEmitter {
   }
 
   send (message, isBinary, compress) {
-    try {
-      return this.connection.send(message, isBinary, compress)
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    return this.connection.send(message, isBinary, compress)
   }
 
   publish (topic, message, isBinary, compress) {
-    try {
-      return this.connection.publish(this.allocTopic(topic), message, isBinary, compress)
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    return this.connection.publish(this.allocTopic(topic), message, isBinary, compress)
   }
 
   subscribe (topic) {
-    try {
-      return this.connection.subscribe(this.allocTopic(topic))
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    return this.connection.subscribe(this.allocTopic(topic))
   }
 
   unsubscribe (topic) {
-    try {
-      return this.connection.unsubscribe(this.allocTopic(topic))
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    return this.connection.unsubscribe(this.allocTopic(topic))
   }
 
   isSubscribed (topic) {
-    try {
-      return this.connection.isSubscribed(this.allocTopic(topic))
-    } catch (err) {
-      this.request.log.error(err)
-      return false
-    }
+    if (this[kEnded]) return false
+    return this.connection.isSubscribed(this.allocTopic(topic))
   }
 
   getTopics () {
-    try {
-      return this.connection.getTopics().map(topic => topic.slice(topic.indexOf(SEP) + 1))
-    } catch (err) {
-      this.request.log.error(err)
-      return []
-    }
+    if (this[kEnded]) return []
+    return this.connection.getTopics().map(topic => topic.slice(topic.indexOf(SEP) + 1))
   }
 
   close () {
-    try {
-      return this.connection.close()
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    this[kEnded] = true
+    return this.connection.close()
   }
 
   end () {
-    try {
-      return this.connection.end()
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    this[kEnded] = true
+    return this.connection.end()
   }
 
   cork (cb) {
-    try {
-      return this.connection.cork(cb)
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    return this.connection.cork(cb)
   }
 
   getBufferedAmount () {
+    if (this[kEnded]) return 0
     return this.connection.getBufferedAmount()
   }
 
   ping (message) {
-    try {
-      return this.connection.ping(message)
-    } catch (err) {
-      this.request.log.error(err)
-    }
+    if (this[kEnded]) return
+    return this.connection.ping(message)
   }
 }
 
@@ -178,6 +146,7 @@ export class WebSocketServer extends EventEmitter {
       },
       close: (ws, code, message) => {
         this.connections.delete(ws)
+        ws.websocket[kEnded] = true
         ws.req.socket.destroy()
         ws.websocket.emit('close', code, message)
         this.emit('close', ws, code, message)
