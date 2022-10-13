@@ -1,15 +1,11 @@
-import ipaddr from 'ipaddr.js'
 import { Duplex } from 'streamx'
 
 import {
   kRes,
   kHttps,
-  kDisableRemoteAddress,
   kServer,
   kAddress,
   kRemoteAdress,
-  kFamily,
-  kParse,
   kEncoding,
   kTimeoutRef,
   kEnded,
@@ -17,11 +13,16 @@ import {
   kWriteOnly,
   kWriteHead,
   kOnDrain,
-  kWs
+  kWs,
+  kUwsRemoteAddress,
+  kHeadWrited
 } from './symbols.js'
 
 const EMPTY = Buffer.alloc(0)
 
+const localAddressIpv6 = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+
+const toHex = (buf, start, end) => buf.slice(start, end).toString('hex')
 export class HTTPSocket extends Duplex {
   constructor (server, res, writeOnly) {
     super({
@@ -47,30 +48,19 @@ export class HTTPSocket extends Duplex {
     }
     this[kEnded] = false
     this[kEncoding] = null
-
-    if (this[kServer][kDisableRemoteAddress]) {
-      this[kRemoteAdress] = '::1'
-      this[kFamily] = 'ipv6'
-    } else {
-      this[kRemoteAdress] = null
-      this[kFamily] = null
-      this[kAddress] = null
-    }
+    this[kRemoteAdress] = null
+    this[kUwsRemoteAddress] = null
+    this[kHeadWrited] = false
 
     this.on('error', () => {
       this.abort()
     })
 
-    this.on('close', () => {
-      if (!this[kWs] && !this.aborted && !this[kEnded]) {
-        this.abort()
-      }
-    })
-
     res.onAborted(() => {
-      this.aborted = true
-      this.destroy()
       this.emit('aborted')
+      this.aborted = true
+      if (this.destroyed) return
+      this.destroy()
     })
 
     res.onWritable(() => {
@@ -103,15 +93,33 @@ export class HTTPSocket extends Duplex {
   get remoteAddress () {
     let remoteAddress = this[kRemoteAdress]
     if (remoteAddress) return remoteAddress
-    remoteAddress = this[kRemoteAdress] = this[kParse]().toString()
+
+    let buf = this[kUwsRemoteAddress]
+    if (!buf) {
+      buf = this[kUwsRemoteAddress] = Buffer.from(this[kRes].getRemoteAddress())
+    }
+
+    if (buf.length === 4) {
+      remoteAddress = `${buf.readUInt8(0)}.${buf.readUInt8(1)}.${buf.readUInt8(2)}.${buf.readUInt8(3)}`
+    } else {
+      // avoid to call toHex if local
+      if (buf.equals(localAddressIpv6)) {
+        remoteAddress = '::1'
+      } else {
+        remoteAddress = `${toHex(buf, 0, 2)}:${toHex(buf, 2, 4)}:${toHex(buf, 4, 6)}:${toHex(buf, 6, 8)}:${toHex(buf, 8, 10)}:${toHex(buf, 10, 12)}:${toHex(buf, 12, 14)}:${toHex(buf, 14)}`
+      }
+    }
+
+    this[kRemoteAdress] = remoteAddress
     return remoteAddress
   }
 
-  get family () {
-    let family = this[kFamily]
-    if (family) return family
-    family = this[kFamily] = this[kParse]().kind()
-    return family
+  get remoteFamily () {
+    if (!this[kUwsRemoteAddress]) {
+      this[kUwsRemoteAddress] = Buffer.from(this[kRes].getRemoteAddress())
+    }
+
+    return this[kUwsRemoteAddress].length === 4 ? 'IPv4' : 'IPv6'
   }
 
   address () {
@@ -132,13 +140,19 @@ export class HTTPSocket extends Duplex {
   }
 
   end (data) {
-    if (this.destroyed || this.destroying || this[kEnded]) return super.end()
-    if (data || this[kReadyState].write) return super.end(data?.isResponse ? data : new HTTPResponse(data, true))
+    if (data) return super.end(data.isResponse ? data : new HTTPResponse(data, true))
     return super.end()
   }
 
-  _predestroy () {
+  destroy (err) {
     this[kTimeoutRef] && clearTimeout(this[kTimeoutRef])
+    super.destroy(err)
+  }
+
+  _destroy (cb) {
+    if (!this[kWs] && !this.aborted && !this[kEnded]) {
+      this[kRes].close()
+    }
   }
 
   _read (cb) {
@@ -175,43 +189,43 @@ export class HTTPSocket extends Duplex {
   _write (data, cb) {
     if (this.destroyed || this[kEnded]) return cb()
 
-    this[kReadyState].write = true
-
     const res = this[kRes]
 
-    // fast end
+    this[kReadyState].write = true
+    this[kEnded] = data.end
+
     if (data.end) {
-      this[kEnded] = true
-      res.cork(() => {
-        this[kWriteHead](data.status, data.headers)
+      if (data.status && data.headers) {
+        // fast end
+        res.cork(() => {
+          this[kWriteHead](data.status, data.headers)
+          res.end(data.chunk)
+        })
+      } else {
         res.end(data.chunk)
-      })
+      }
+
+      this[kHeadWrited] = true
       return cb()
     }
 
     this[kWriteHead](data.status, data.headers)
 
+    this[kHeadWrited] = true
     const drained = res.write(data.chunk)
     if (drained) return cb()
     this[kOnDrain](() => res.write(data.chunk), cb)
   }
 
-  [kParse] () {
-    let address = this[kAddress]
-    if (address) return address
-    address = this[kAddress] = ipaddr.parse(Buffer.from(this[kRes].getRemoteAddressAsText()).toString())
-    return address
-  }
-
   [kWriteHead] (status, headers) {
-    if (this.aborted) return
+    if (this.aborted || this[kHeadWrited]) return
 
     const res = this[kRes]
     if (status) res.writeStatus(status)
 
     if (headers) {
       headers.forEach(header => {
-        res.writeHeader(header.name, String(header.value))
+        res.writeHeader(header.name, header.value)
       })
     }
   }

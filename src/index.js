@@ -12,7 +12,6 @@ import { Request } from './request.js'
 import { Response } from './response.js'
 import {
   kHttps,
-  kDisableRemoteAddress,
   kHandler,
   kAddress,
   kListenSocket,
@@ -40,14 +39,13 @@ export class Server extends EventEmitter {
   constructor (handler, opts = {}) {
     super()
 
-    const { connectionTimeout = 0, disableRemoteAddress = false, https = false } = opts
+    const { connectionTimeout = 0, https = false } = opts
 
     assert(!https || (typeof https === 'object' && typeof https.key === 'string' && typeof https.cert === 'string'),
       'https must be a valid object { key: string, cert: string }')
 
     this[kHandler] = handler
     this.timeout = connectionTimeout
-    this[kDisableRemoteAddress] = disableRemoteAddress
     this[kHttps] = https
     this[kWs] = null
     this[kAddress] = null

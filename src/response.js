@@ -31,16 +31,12 @@ class Header {
     this.value = String(value)
   }
 }
+
 export class Response extends Writable {
   constructor (socket) {
     super({
       mapWritable: (data) => {
-        if (data?.isResponse) return data
-        const res = new HTTPResponse(data)
-        if (!res.end) {
-          res.end = this.contentLength !== null && this.contentLength === res.byteLength
-        }
-        return res
+        return data?.isResponse ? data : new HTTPResponse(data)
       },
       byteLength: (data) => {
         return data.byteLength
@@ -134,8 +130,7 @@ export class Response extends Writable {
   }
 
   end (data) {
-    if (this.writableEnded) return super.end()
-    return super.end(new HTTPResponse(data, true))
+    super.end(new HTTPResponse(data, true))
   }
 
   destroy (err) {
@@ -146,13 +141,17 @@ export class Response extends Writable {
   _write (data, cb) {
     if (this.aborted) return cb()
 
-    this.writableEnded = data.end
+    if (!data.end) {
+      data.end = this.contentLength !== null && this.contentLength === data.byteLength
+    }
 
     if (!this.headersSent) {
       this.headersSent = true
       data.headers = this[kHeaders]
       data.status = this.status
     }
+
+    this.writableEnded = data.end
 
     if (data.end) {
       this.socket.end(data)
@@ -164,8 +163,8 @@ export class Response extends Writable {
   }
 
   _destroy (cb) {
-    if (this.socket.destroyed || this.socket.destroying || this.aborted) return cb()
+    if (this.socket.destroyed || this.socket.destroying || this.aborted || this.writableEnded) return cb()
     this.socket.once('close', cb)
-    if (!this.writableEnded) this.socket.destroy(this[kDestroyError])
+    this.socket.destroy(this[kDestroyError])
   }
 }
