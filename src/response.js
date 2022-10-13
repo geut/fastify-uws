@@ -36,7 +36,17 @@ export class Response extends Writable {
   constructor (socket) {
     super({
       mapWritable: (data) => {
-        return data?.isResponse ? data : new HTTPResponse(data)
+        data = data?.isResponse ? data : new HTTPResponse(data)
+
+        if (!data.end) {
+          data.end = this.contentLength !== null && this.contentLength === data.byteLength
+        }
+
+        if (!this.writableEnded) {
+          this.writableEnded = data.end
+        }
+
+        return data
       },
       byteLength: (data) => {
         return data.byteLength
@@ -130,6 +140,7 @@ export class Response extends Writable {
   }
 
   end (data) {
+    if (this.writableEnded) return super.end()
     super.end(new HTTPResponse(data, true))
   }
 
@@ -141,17 +152,11 @@ export class Response extends Writable {
   _write (data, cb) {
     if (this.aborted) return cb()
 
-    if (!data.end) {
-      data.end = this.contentLength !== null && this.contentLength === data.byteLength
-    }
-
     if (!this.headersSent) {
       this.headersSent = true
       data.headers = this[kHeaders]
       data.status = this.status
     }
-
-    this.writableEnded = data.end
 
     if (data.end) {
       this.socket.end(data)

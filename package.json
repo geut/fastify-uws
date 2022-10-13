@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "start": "node index.js",
-    "build": "tsup src/**.js",
+    "build": "tsup src/index.js",
     "test": "uvu --ignore tests/fastify",
     "posttest": "npm run lint",
     "lint": "standard",
