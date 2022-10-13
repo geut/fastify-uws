@@ -18,8 +18,6 @@ import {
   kHeadWrited
 } from './symbols.js'
 
-const EMPTY = Buffer.alloc(0)
-
 const localAddressIpv6 = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
 
 const toHex = (buf, start, end) => buf.slice(start, end).toString('hex')
@@ -259,22 +257,18 @@ export class HTTPSocket extends Duplex {
 
 export class HTTPResponse {
   constructor (chunk, end) {
+    this.chunk = chunk || undefined
+
     if (chunk) {
-      this.chunk = chunk
       this.end = end
+      this.byteLength = Buffer.byteLength(chunk)
     } else {
       this.end = true
-      this.empty = true
-      this.chunk = EMPTY
+      this.byteLength = 1
     }
+
     this.isResponse = true
     this.status = null
     this.headers = null
-  }
-
-  get byteLength () {
-    if (this._byteLength !== undefined) return this._byteLength
-    this._byteLength = this.empty ? 1 : Buffer.byteLength(this.chunk)
-    return this._byteLength
   }
 }
