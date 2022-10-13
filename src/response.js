@@ -61,9 +61,7 @@ export class Response extends Writable {
     this.writableEnded = false
     this.sendDate = true
 
-    this[kHeaders] = new Map([
-      ['date', new Header('Date', utcDate())]
-    ])
+    this[kHeaders] = new Map()
 
     socket.once('close', () => this.destroy())
     socket.once('aborted', () => this.emit('aborted'))
@@ -130,6 +128,10 @@ export class Response extends Writable {
       headers = statusMessage
     } else if (statusMessage) {
       this.statusMessage = statusMessage
+    }
+
+    if (this.sendDate) {
+      this[kHeaders].set('date', new Header('Date', utcDate()))
     }
 
     if (headers) {
