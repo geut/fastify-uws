@@ -39,7 +39,7 @@ function fastifyUws (fastify, opts = {}, next) {
         uRes.upgrade({
           req: requestRaw,
           handler: (ws) => {
-            handler.call(this, request, new WebSocket(namespace, ws, topics))
+            handler.call(this, request, new WebSocket(namespace, ws, request, topics))
           }
         },
         requestRaw.headers['sec-websocket-key'],

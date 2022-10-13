@@ -87,6 +87,9 @@ export class Server extends EventEmitter {
       uws.us_listen_socket_close(this[kListenSocket])
       this[kListenSocket] = null
     }
+    if (this[kWs]) {
+      this[kWs].connections.forEach(conn => conn.close())
+    }
     setTimeout(() => {
       this.emit('close')
       cb()

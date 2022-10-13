@@ -34,13 +34,18 @@ export class WebSocket extends EventEmitter {
     return buf
   }
 
-  constructor (namespace, connection, topics = {}) {
+  constructor (namespace, connection, request, topics = {}) {
     super()
 
     this.namespace = namespace
     this.connection = connection
     connection.websocket = this
-    this.topics = topics
+    this.request = request
+    this.topics = topics // we maintain a cache of buffer topics
+    this.request.log.info('fastify-uws: websocket connection opened')
+    this.once('close', () => {
+      this.request.log.info('fastify-uws: websocket connection closed')
+    })
   }
 
   get ws () {
@@ -53,39 +58,77 @@ export class WebSocket extends EventEmitter {
   }
 
   send (message, isBinary, compress) {
-    return this.connection.send(message, isBinary, compress)
+    try {
+      return this.connection.send(message, isBinary, compress)
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   publish (topic, message, isBinary, compress) {
-    return this.connection.publish(this.allocTopic(topic), message, isBinary, compress)
+    try {
+      return this.connection.publish(this.allocTopic(topic), message, isBinary, compress)
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   subscribe (topic) {
-    return this.connection.subscribe(this.allocTopic(topic))
+    try {
+      return this.connection.subscribe(this.allocTopic(topic))
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   unsubscribe (topic) {
-    return this.connection.unsubscribe(this.allocTopic(topic))
+    try {
+      return this.connection.unsubscribe(this.allocTopic(topic))
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   isSubscribed (topic) {
-    return this.connection.isSubscribed(this.allocTopic(topic))
+    try {
+      return this.connection.isSubscribed(this.allocTopic(topic))
+    } catch (err) {
+      this.request.log.error(err)
+      return false
+    }
   }
 
   getTopics () {
-    return this.connection.getTopics().map(topic => topic.slice(topic.indexOf(SEP) + 1))
+    try {
+      return this.connection.getTopics().map(topic => topic.slice(topic.indexOf(SEP) + 1))
+    } catch (err) {
+      this.request.log.error(err)
+      return []
+    }
   }
 
   close () {
-    return this.connection.close()
+    try {
+      return this.connection.close()
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   end () {
-    return this.connection.end()
+    try {
+      return this.connection.end()
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   cork (cb) {
-    return this.connection.cork(cb)
+    try {
+      return this.connection.cork(cb)
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 
   getBufferedAmount () {
@@ -93,7 +136,11 @@ export class WebSocket extends EventEmitter {
   }
 
   ping (message) {
-    return this.connection.ping(message)
+    try {
+      return this.connection.ping(message)
+    } catch (err) {
+      this.request.log.error(err)
+    }
   }
 }
 
@@ -101,9 +148,10 @@ export class WebSocketServer extends EventEmitter {
   constructor (options = {}) {
     super()
     this.options = options && (options === true ? defaultWebSocketConfig : { ...options, ...defaultWebSocketConfig })
+    this.connections = new Set()
   }
 
-  addServer (server, primary = false) {
+  addServer (server) {
     const { options } = this
     const app = server[kApp]
     const listenerHandler = server[kHandler]
@@ -124,10 +172,12 @@ export class WebSocketServer extends EventEmitter {
         listenerHandler(request, response)
       },
       open: ws => {
+        this.connections.add(ws)
         ws.handler(ws)
         this.emit('open', ws)
       },
       close: (ws, code, message) => {
+        this.connections.delete(ws)
         ws.req.socket.destroy()
         ws.websocket.emit('close', code, message)
         this.emit('close', ws, code, message)
