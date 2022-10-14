@@ -5,7 +5,7 @@ import { Writable } from 'streamx'
 
 import { HTTPResponse } from './http-socket.js'
 import { ERR_HEAD_SET } from './errors.js'
-import { kHeaders, kDestroyError } from './symbols.js'
+import { kHeaders } from './symbols.js'
 
 let utcCache
 
@@ -63,7 +63,9 @@ export class Response extends Writable {
 
     this[kHeaders] = new Map()
 
-    socket.once('close', () => this.destroy())
+    this.once('error', () => {})
+    socket.once('error', err => super.destroy(err))
+    socket.once('close', () => super.destroy())
     socket.once('aborted', () => this.emit('aborted'))
   }
 
@@ -147,8 +149,8 @@ export class Response extends Writable {
   }
 
   destroy (err) {
-    this[kDestroyError] = err
-    super.destroy(err)
+    if (this.destroyed || this.destroying) return
+    this.socket.destroy(err)
   }
 
   _write (data, cb) {
@@ -172,6 +174,5 @@ export class Response extends Writable {
   _destroy (cb) {
     if (this.socket.destroyed || this.socket.destroying || this.aborted || this.writableEnded) return cb()
     this.socket.once('close', cb)
-    this.socket.destroy(this[kDestroyError])
   }
 }

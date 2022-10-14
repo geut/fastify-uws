@@ -25,8 +25,11 @@ export class HTTPSocket extends Duplex {
   constructor (server, res, writeOnly) {
     super({
       mapWritable: data => {
-        if (data?.isResponse) return data
-        return new HTTPResponse(data)
+        data = data?.isResponse ? data : new HTTPResponse(data)
+        if (!this[kEnded]) {
+          this[kEnded] = data.end
+        }
+        return data
       },
       byteLengthWritable: (data) => {
         return data.byteLength
@@ -138,11 +141,12 @@ export class HTTPSocket extends Duplex {
   }
 
   end (data) {
-    if (data) return super.end(data.isResponse ? data : new HTTPResponse(data, true))
-    return super.end()
+    if (this[kEnded] || !data) return super.end()
+    return super.end(data.isResponse ? data : new HTTPResponse(data, true))
   }
 
   destroy (err) {
+    if (this.destroyed || this.destroying || this[kEnded]) return
     this[kTimeoutRef] && clearTimeout(this[kTimeoutRef])
     super.destroy(err)
   }
@@ -186,12 +190,11 @@ export class HTTPSocket extends Duplex {
   }
 
   _write (data, cb) {
-    if (this.destroyed || this[kEnded]) return cb()
+    if (this.destroyed) return cb()
 
     const res = this[kRes]
 
     this[kReadyState].write = true
-    this[kEnded] = data.end
 
     if (data.end) {
       if (data.status && data.headers) {

@@ -1,6 +1,6 @@
 import { Readable } from 'streamx'
 
-import { kReq, kHeaders, kUrl, kDestroyError } from './symbols.js'
+import { kReq, kHeaders, kUrl } from './symbols.js'
 export class Request extends Readable {
   constructor (req, socket, method) {
     super()
@@ -18,7 +18,9 @@ export class Request extends Readable {
       this[kHeaders] = null
     }
 
-    socket.once('close', () => this.destroy())
+    this.once('error', () => {})
+    socket.once('error', err => super.destroy(err))
+    socket.once('close', () => super.destroy())
     socket.once('aborted', () => this.emit('aborted'))
   }
 
@@ -57,8 +59,8 @@ export class Request extends Readable {
   }
 
   destroy (err) {
-    this[kDestroyError] = err
-    super.destroy(err)
+    if (this.destroyed || this.destroying) return
+    this.socket.destroy(err)
   }
 
   _read (cb) {
@@ -86,11 +88,5 @@ export class Request extends Readable {
     })
 
     onRead()
-  }
-
-  _destroy (cb) {
-    if (this.socket.destroyed || this.socket.destroying || this.aborted || this.readableEnded) return cb()
-    this.socket.once('close', cb)
-    this.socket.destroy(this[kDestroyError])
   }
 }
