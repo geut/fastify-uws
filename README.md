@@ -34,7 +34,15 @@ app.websocketServer.on('close', ws => {
 })
 
 app
-  .get('/', { ws: { topics: ['home/sensors/ligth', 'home/sensors/temp'] } }, async (req, reply) => {
+  .get('/', {
+    ws: {
+      topics: [
+        'home/sensors/ligth',
+        'home/sensors/temp'
+      ]
+    }
+  },
+  async (req, reply) => {
     if (!reply.ws) {
       return 'hello from http endpoint'
     }
