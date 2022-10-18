@@ -1,6 +1,8 @@
 import { Readable } from 'streamx'
 
 import { kReq, kHeaders, kUrl } from './symbols.js'
+
+const noop = () => {}
 export class Request extends Readable {
   constructor (req, socket, method) {
     super()
@@ -10,18 +12,14 @@ export class Request extends Readable {
     this.httpVersion = '1.1'
     this.readableEnded = false
     this[kReq] = req
-    if (req.url) {
-      this[kUrl] = req.url
-      this[kHeaders] = req.headers
-    } else {
-      this[kUrl] = null
-      this[kHeaders] = null
-    }
+    this[kUrl] = null
+    this[kHeaders] = null
 
-    this.once('error', () => {})
-    socket.once('error', err => super.destroy(err))
-    socket.once('close', () => super.destroy())
-    socket.once('aborted', () => this.emit('aborted'))
+    this.on('error', noop)
+    const destroy = super.destroy.bind(this)
+    socket.on('error', destroy)
+    socket.on('close', destroy)
+    socket.on('aborted', this._onAbort.bind(this))
   }
 
   get aborted () {
@@ -45,7 +43,7 @@ export class Request extends Readable {
     if (headers) return headers
     headers = this[kHeaders] = {}
     this[kReq].forEach((k, v) => {
-      headers[k.toLowerCase()] = v
+      headers[k] = v
     })
     return headers
   }
@@ -64,29 +62,24 @@ export class Request extends Readable {
   }
 
   _read (cb) {
-    const socket = this.socket
-    let closed = false
+    if (this.destroyed || this.destroying || this.socket.destroyed) return cb()
 
-    const onRead = () => {
-      if (closed || this.destroyed || this.destroying) return
+    this.socket.onRead((err, data) => {
+      if (err) return cb(err)
 
-      const chunk = socket.read()
+      if (this.destroyed || this.destroying) return cb()
 
-      if (chunk) {
-        this.push(chunk)
-        return onRead()
+      this.push(data)
+
+      if (!data) {
+        this.readableEnded = true
       }
 
-      socket.once('readable', onRead)
-    }
-
-    socket.once('end', () => {
-      closed = true
-      this.readableEnded = true
-      this.push(null)
       cb()
     })
+  }
 
-    onRead()
+  _onAbort () {
+    this.emit('aborted')
   }
 }

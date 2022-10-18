@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "fastify-plugin": "^4.2.1",
+    "fastq": "^1.13.0",
     "ipaddr.js": "^2.0.1",
     "nanoerror": "^1.2.1",
     "streamx": "^2.12.5",

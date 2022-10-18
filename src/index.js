@@ -125,7 +125,7 @@ export class Server extends EventEmitter {
       const socket = new HTTPSocket(this, res, method === 'GET' || method === 'HEAD')
       const request = new Request(req, socket, method)
       const response = new Response(socket)
-      if (req.getHeader('upgrade') !== '') {
+      if (request.headers.upgrade !== '') {
         this.emit('upgrade', request, socket)
         if (!this[kWs]) {
           process.nextTick(() => socket.destroy(new ERR_UPGRADE(socket.address())))
