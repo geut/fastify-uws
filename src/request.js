@@ -3,6 +3,10 @@ import { Readable } from 'streamx'
 import { kReq, kHeaders, kUrl } from './symbols.js'
 
 const noop = () => {}
+
+function onAbort () {
+  this.emit('aborted')
+}
 export class Request extends Readable {
   constructor (req, socket, method) {
     super()
@@ -15,11 +19,11 @@ export class Request extends Readable {
     this[kUrl] = null
     this[kHeaders] = null
 
-    this.on('error', noop)
+    this.once('error', noop)
     const destroy = super.destroy.bind(this)
-    socket.on('error', destroy)
-    socket.on('close', destroy)
-    socket.on('aborted', this._onAbort.bind(this))
+    socket.once('error', destroy)
+    socket.once('close', destroy)
+    socket.once('aborted', onAbort.bind(this))
   }
 
   get aborted () {
@@ -77,9 +81,5 @@ export class Request extends Readable {
 
       cb()
     })
-  }
-
-  _onAbort () {
-    this.emit('aborted')
   }
 }

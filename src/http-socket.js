@@ -51,7 +51,7 @@ function onWrite (data, cb) {
     return cb()
   }
 
-  if (!this[kHead]) {
+  if (this[kHead]) {
     writeHead(res, this[kHead])
     this[kHead] = null
   }
@@ -63,10 +63,16 @@ function onWrite (data, cb) {
 
 function end (socket, data) {
   const res = socket[kRes]
-  if (!socket[kHead]) {
-    writeHead(res, socket[kHead])
-    socket[kHead] = null
+
+  if (socket[kHead]) {
+    res.cork(() => {
+      writeHead(res, socket[kHead])
+      socket[kHead] = null
+      res.end(data)
+    })
+    return
   }
+
   res.end(data)
 }
 
@@ -140,6 +146,14 @@ export class HTTPSocket extends EventEmitter {
     return 'opening'
   }
 
+  get writable () {
+    return true
+  }
+
+  get readable () {
+    return true
+  }
+
   get encrypted () {
     return !!this[kServer][kHttps]
   }
@@ -185,10 +199,10 @@ export class HTTPSocket extends EventEmitter {
   }
 
   abort () {
-    if (this.destroyed) return
+    if (this.aborted) return
     this.aborted = true
     this[kQueue] && this[kQueue].kill()
-    if (!this[kWs]) {
+    if (!this[kWs] && !this[kEnded]) {
       this[kRes].close()
     }
   }
@@ -198,7 +212,7 @@ export class HTTPSocket extends EventEmitter {
   }
 
   destroy (err) {
-    if (this.destroyed) return
+    if (this.aborted) return
     this._clearTimeout()
     process.nextTick(() => {
       err && this.emit('error', err)
@@ -237,7 +251,9 @@ export class HTTPSocket extends EventEmitter {
   }
 
   end (data, cb = noop) {
-    if (this[kEnded] || this.aborted) return
+    if (this.destroyed) return
+
+    if (!data) return this.abort()
 
     this[kEnded] = true
     const queue = this[kQueue]

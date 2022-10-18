@@ -31,17 +31,23 @@ class Header {
   }
 }
 
+const EMPTY = Buffer.from('')
 class HTTPResponse {
-  constructor (chunk, end) {
+  constructor (chunk, end = false) {
     this.isResponse = true
-    this.chunk = chunk || undefined
-    this.end = end || !chunk
+    this.chunk = chunk || EMPTY
+    this.end = end
+    this.byteLength = Buffer.byteLength(chunk)
+  }
+}
 
-    if (chunk) {
-      this.byteLength = Buffer.byteLength(chunk)
-    } else {
-      this.byteLength = 1
-    }
+function onAbort () {
+  this.emit('aborted')
+}
+
+function onClose () {
+  if (this.writableEnded && this.bytesWritten === 0) {
+    this.emit('finish')
   }
 }
 
@@ -55,6 +61,7 @@ const options = {
     return data.byteLength
   }
 }
+
 export class Response extends Writable {
   constructor (socket) {
     super(options)
@@ -65,15 +72,17 @@ export class Response extends Writable {
     this.chunked = false
     this.contentLength = null
     this.writableEnded = false
+    this.bytesWritten = 0
     this.sendDate = true
 
     this[kHeaders] = new Map()
 
-    this.on('error', noop)
-    const destroy = super.destroy.bind(this)
-    socket.on('error', destroy)
-    socket.on('close', destroy)
-    socket.on('aborted', this._onAbort.bind(this))
+    const destroy = this.destroy.bind(this)
+    this.once('error', noop)
+    this.once('close', onClose.bind(this))
+    socket.once('error', destroy)
+    socket.once('close', destroy)
+    socket.once('aborted', onAbort.bind(this))
   }
 
   get aborted () {
@@ -151,8 +160,10 @@ export class Response extends Writable {
   }
 
   end (data) {
-    if (this.writableEnded) return super.end()
-    super.end(new HTTPResponse(data, true))
+    if (this.writableEnded) return
+    if (data) return super.end(new HTTPResponse(data, true))
+    this.writableEnded = true
+    return super.end()
   }
 
   destroy (err) {
@@ -171,6 +182,8 @@ export class Response extends Writable {
       }
     }
 
+    this.bytesWritten += data.byteLength
+
     if (data.end || (this.contentLength !== null && this.contentLength === data.byteLength)) {
       this.writableEnded = true
       this.socket.end(data.chunk, cb)
@@ -181,11 +194,20 @@ export class Response extends Writable {
   }
 
   _destroy (cb) {
-    if (this.socket.destroyed || this.aborted || this.writableEnded) return cb()
-    this.socket.once('close', cb)
-  }
+    if (this.socket.destroyed) return cb()
 
-  _onAbort () {
-    this.emit('aborted')
+    if (this.writableEnded) {
+      if (!this.headersSent) {
+        this.headersSent = true
+        this.socket[kHead] = {
+          headers: this[kHeaders],
+          status: this.status
+        }
+      }
+
+      this.socket.end(EMPTY)
+    }
+
+    this.socket.once('close', cb)
   }
 }
