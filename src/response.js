@@ -101,8 +101,8 @@ export class Response extends Writable {
 
   getHeaders () {
     const headers = {}
-    this[kHeaders].forEach(header => {
-      headers[header.name] = header.value
+    this[kHeaders].forEach((header, key) => {
+      headers[key] = header.value
     })
     return headers
   }
