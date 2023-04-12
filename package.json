@@ -1,6 +1,6 @@
 {
   "name": "@geut/fastify-uws",
-  "version": "0.0.9",
+  "version": "1.0.0",
   "description": "uWebSockets.js for fastify",
   "type": "module",
   "main": "./dist/index.cjs",
