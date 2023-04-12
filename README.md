@@ -1,5 +1,5 @@
 # fastify-uws
-uWebSockets.js for fastify
+[uWebSockets.js](https://github.com/uNetworking/uWebSockets.js) for fastify
 
 ![Tests](https://github.com/geut/fastify-uws/actions/workflows/test.yml/badge.svg)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg?style=flat)](https://standardjs.com)
@@ -17,13 +17,18 @@ $ npm install @geut/fastify-uws
 
 ```javascript
 import fastify from 'fastify'
-import { serverFactory, fastifyUws } from '@geut/fastify-uws'
+import { serverFactory, fastifyUws, getUws } from '@geut/fastify-uws'
 
 const app = fastify({
   serverFactory
 })
 
 await app.register(fastifyUws)
+
+app.addHook('onReady', async () => {
+  // access to uws app
+  const uwsApp = getUws(app)
+})
 
 app.websocketServer.on('open', ws => {
   console.log('OPEN')

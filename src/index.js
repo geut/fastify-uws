@@ -1,12 +1,12 @@
 import EventEmitter from 'events'
-import { promises as fs } from 'fs'
+import { writeFileSync } from 'fs'
 import assert from 'assert'
 
 import uws from 'uWebSockets.js'
 import ipaddr from 'ipaddr.js'
 import tempy from 'tempy'
 
-import { ERR_ADDRINUSE, ERR_UPGRADE } from './errors.js'
+import { ERR_ADDRINUSE, ERR_UPGRADE, ERR_UWS_APP_NOT_FOUND, ERR_ENOTFOUND, ERR_SOCKET_BAD_PORT } from './errors.js'
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
 import { Response } from './response.js'
@@ -21,12 +21,13 @@ import {
   kWs
 } from './symbols.js'
 
-async function createApp (https) {
+function createApp (https) {
   if (!https) return uws.App()
+  if (!https.key) return uws.SSLApp(https)
   const keyFile = tempy.file()
-  await fs.writeFile(keyFile, https.key)
+  writeFileSync(keyFile, https.key)
   const certFile = tempy.file()
-  await fs.writeFile(certFile, https.cert)
+  writeFileSync(certFile, https.cert)
   return uws.SSLApp({
     key_file_name: keyFile,
     cert_file_name: certFile,
@@ -50,7 +51,7 @@ export class Server extends EventEmitter {
     this[kWs] = null
     this[kAddress] = null
     this[kListenSocket] = null
-    this[kApp] = null
+    this[kApp] = createApp(this[kHttps])
     this[kClosed] = false
   }
 
@@ -101,25 +102,24 @@ export class Server extends EventEmitter {
   unref () {}
 
   async [kListen] ({ port, host }) {
-    assert(port === undefined || port === null || !Number.isNaN(Number(port)), `options.port should be >= 0 and < 65536. Received ${port}.`)
+    if (port !== undefined && port !== null && Number.isNaN(Number(port))) {
+      throw new ERR_SOCKET_BAD_PORT(port)
+    }
 
     port = (port === undefined || port === null) ? 0 : Number(port)
 
     this[kAddress] = {
-      address: host === 'localhost' ? '127.0.0.1' : host,
+      address: host === 'localhost' ? '::1' : host,
       port
     }
 
-    let longAddress = this[kAddress].address
-    if (longAddress.startsWith('[')) {
-      longAddress = longAddress.slice(1, longAddress.length - 2)
-    }
+    if (this[kAddress].address.startsWith('[')) throw new ERR_ENOTFOUND(this[kAddress].address)
 
-    const parsedAddress = ipaddr.parse(longAddress)
+    const parsedAddress = ipaddr.parse(this[kAddress].address)
     this[kAddress].family = parsedAddress.kind() === 'ipv6' ? 'IPv6' : 'IPv4'
-    longAddress = parsedAddress.toNormalizedString()
+    const longAddress = parsedAddress.toNormalizedString()
 
-    const app = this[kApp] = await createApp(this[kHttps])
+    const app = this[kApp]
 
     const onRequest = method => (res, req) => {
       const socket = new HTTPSocket(this, res, method === 'GET' || method === 'HEAD')
@@ -170,6 +170,12 @@ export class Server extends EventEmitter {
 export const serverFactory = (handler, opts) => new Server(handler, opts)
 
 export { default as fastifyUws } from './plugin.js'
+
+export const getUws = (fastify) => {
+  const { server } = fastify
+  if (!server[kApp]) throw new ERR_UWS_APP_NOT_FOUND()
+  return server[kApp]
+}
 
 export {
   DEDICATED_COMPRESSOR_128KB,

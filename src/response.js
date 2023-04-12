@@ -6,24 +6,6 @@ import { Writable } from 'streamx'
 import { ERR_HEAD_SET, ERR_STREAM_DESTROYED } from './errors.js'
 import { kHeaders, kHead } from './symbols.js'
 
-let utcCache
-
-function utcDate () {
-  if (!utcCache) cache()
-  return utcCache
-}
-
-function cache () {
-  const d = new Date()
-  utcCache = d.toUTCString()
-  const timeout = setTimeout(resetCache, 1000 - d.getMilliseconds())
-  timeout.unref()
-}
-
-function resetCache () {
-  utcCache = undefined
-}
-
 class Header {
   constructor (name, value) {
     this.name = name
@@ -62,7 +44,6 @@ export class Response extends Writable {
     this.headersSent = false
     this.chunked = false
     this.contentLength = null
-    this.sendDate = true
     this.writableEnded = false
     this.firstChunk = true
 
@@ -142,10 +123,6 @@ export class Response extends Writable {
       this.statusMessage = statusMessage
     }
 
-    if (this.sendDate) {
-      this[kHeaders].set('date', new Header('Date', utcDate()))
-    }
-
     if (headers) {
       Object.keys(headers).forEach(key => {
         this.setHeader(key, headers[key])
@@ -154,17 +131,20 @@ export class Response extends Writable {
   }
 
   end (data) {
+    if (this.aborted) return
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
     this.writableEnded = true
     return super.end(new HTTPResponse(data, true))
   }
 
   destroy (err) {
-    if (this.destroyed || this.destroying) return
+    if (this.destroyed || this.destroying || this.aborted) return
     this.socket.destroy(err)
   }
 
   write (data) {
+    if (this.aborted) return
+
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
 
     data = new HTTPResponse(data)

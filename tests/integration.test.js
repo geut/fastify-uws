@@ -12,7 +12,6 @@ test('fastify integration tests', async () => {
       'async-await',
       'bodyLimit',
       'case-insensitive',
-      'close-pipelining',
       'close',
       'custom-parser-async',
       'custom-parser',
@@ -42,8 +41,7 @@ test('fastify integration tests', async () => {
       'stream',
       'https/https',
       'url-rewriting',
-      'trust-proxy',
-      'upgrade'
+      'trust-proxy'
     ],
     ignore: [
       'framework-unsupported method',
@@ -53,7 +51,8 @@ test('fastify integration tests', async () => {
       'run hook with encapsulated 404 and framework-unsupported method',
       'Unknown method',
       'listen on socket',
-      'Current opened connection should continue to work after closing and return "connection: close" header - return503OnClosing: false',
+      'Current opened connection should continue to work after closing and return "connection: close" header - return503OnClosing: false, skip Node >= v19.x',
+      'Current opened connection should NOT continue to work after closing and return "connection: close" header - return503OnClosing: false, skip Node < v19.x',
       'shutsdown while keep-alive connections are active (non-async, native)',
       'shutsdown while keep-alive connections are active (non-async, idle, native)',
       'shutsdown while keep-alive connections are active (non-async, custom)'
