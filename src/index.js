@@ -6,7 +6,7 @@ import uws from 'uWebSockets.js'
 import ipaddr from 'ipaddr.js'
 import tempy from 'tempy'
 
-import { ERR_ADDRINUSE, ERR_UPGRADE, ERR_UWS_APP_NOT_FOUND, ERR_ENOTFOUND, ERR_SOCKET_BAD_PORT } from './errors.js'
+import { ERR_ADDRINUSE, ERR_UWS_APP_NOT_FOUND, ERR_ENOTFOUND, ERR_SOCKET_BAD_PORT } from './errors.js'
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
 import { Response } from './response.js'
@@ -127,9 +127,6 @@ export class Server extends EventEmitter {
       const response = new Response(socket)
       if (request.headers.upgrade) {
         this.emit('upgrade', request, socket)
-        if (!this[kWs]) {
-          process.nextTick(() => socket.destroy(new ERR_UPGRADE(socket.address())))
-        }
       }
       this[kHandler](request, response)
     }
