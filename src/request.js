@@ -34,7 +34,7 @@ export class Request extends Readable {
     let url = this[kUrl]
     if (url) return url
     const query = this[kReq].getQuery()
-    url = this[kUrl] = this[kReq].getUrl() + (query.length > 0 ? `?${query}` : '')
+    url = this[kUrl] = this[kReq].getUrl() + (query && query.length > 0 ? `?${query}` : '')
     return url
   }
 
