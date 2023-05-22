@@ -33,7 +33,7 @@
     "nanoerror": "^1.2.1",
     "streamx": "^2.12.5",
     "tempy": "^1.0.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.20.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.25.0"
   },
   "devDependencies": {
     "fastify": "^4.6.0",
