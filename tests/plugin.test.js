@@ -6,7 +6,8 @@ import fastify from 'fastify'
 import WebSocket from 'ws'
 import sget from 'simple-get'
 
-import { serverFactory, fastifyUws } from '../src/index.js'
+import { serverFactory } from '../src/index.js'
+import fastifyUwsPlugin from '../src/plugin.js'
 
 const get = (opts) => new Promise((resolve, reject) => sget.concat(opts, (err, _, data) => {
   if (err) return reject(err)
@@ -25,19 +26,23 @@ test('basic websocket', async (context) => {
     serverFactory
   })
 
-  await app.register(fastifyUws)
+  await app.register(fastifyUwsPlugin)
 
   app.websocketServer.on('message', () => onGlobalMessage++)
 
   await app
-    .get('/', { ws: { topics: ['home/sensors/ligth', 'home/sensors/temp'] } }, async (req, reply) => {
-      if (!reply.ws) {
+    .route({
+      method: 'GET',
+      url: '/',
+      uws: { topics: ['home/sensors/ligth', 'home/sensors/temp'] },
+      handler: () => {
         return 'hello from http endpoint'
+      },
+      uwsHandler: (conn) => {
+        conn.subscribe('home/sensors/temp')
+        conn.on('message', (message) => conn.publish('home/sensors/temp', message))
+        conn.send(JSON.stringify(conn.getTopics()))
       }
-
-      reply.subscribe('home/sensors/temp')
-      reply.on('message', (message) => reply.publish('home/sensors/temp', message))
-      reply.send(JSON.stringify(reply.getTopics()))
     })
     .listen({
       port: 3000,

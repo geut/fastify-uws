@@ -17,13 +17,15 @@ $ npm install @geut/fastify-uws
 
 ```javascript
 import fastify from 'fastify'
-import { serverFactory, fastifyUws, getUws } from '@geut/fastify-uws'
+import { serverFactory, getUws, WebSocketStream } from '@geut/fastify-uws'
+
+import fastifyUwsPlugin from '@geut/fastify-uws/plugin'
 
 const app = fastify({
   serverFactory
 })
 
-await app.register(fastifyUws)
+await app.register(fastifyUwsPlugin)
 
 app.addHook('onReady', async () => {
   // access to uws app
@@ -39,24 +41,32 @@ app.websocketServer.on('close', ws => {
 })
 
 app
-  .get('/', {
-    ws: {
+  .route({
+    method: 'GET',
+    url: '/',
+    handler (req, reply) {
+      return 'hello from http endpoint'
+    },
+    uws: {
+      // cache subscription topics to produce less memory allocations
       topics: [
         'home/sensors/ligth',
         'home/sensors/temp'
       ]
+    },
+    uwsHandler (conn) {
+      conn.subscribe('home/sensors/temp')
+      conn.on('message', (message) => {
+        conn.publish('home/sensors/temp', 'random message')
+      })
+      conn.send(JSON.stringify({ hello: 'world' }))
     }
-  },
-  async (req, reply) => {
-    if (!reply.ws) {
-      return 'hello from http endpoint'
-    }
-
-    reply.subscribe('home/sensors/temp')
-    reply.on('message', (message) => {
-      reply.publish('home/sensors/temp', 'random message')
+  })
+  .get('/stream', { uws: true }, (conn) => {
+    const stream = new WebSocketStream(conn)
+    stream.on('data', data => {
+      console.log('stream data from /stream')
     })
-    reply.send(JSON.stringify({ hello: 'world' }))
   })
   .listen({
     port: 3000

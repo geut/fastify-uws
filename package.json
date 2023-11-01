@@ -9,6 +9,10 @@
       "require": "./dist/index.cjs",
       "import": "./src/index.js"
     },
+    "./plugin": {
+      "require": "./dist/plugin.cjs",
+      "import": "./src/plugin.js"
+    },
     "./package.json": "./package.json"
   },
   "workspaces": [
@@ -22,26 +26,31 @@
     "start": "node index.js",
     "build": "tsup src/index.js",
     "test": "uvu --ignore tests/fastify",
-    "posttest": "npm run lint",
+    "posttest": "npm run lint && tsc -p jsconfig.json",
     "lint": "standard",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm test && npm run build",
+    "types": "tsc src/index.js --declaration --allowJs --emitDeclarationOnly --outDir types"
   },
   "dependencies": {
-    "fastify-plugin": "^4.2.1",
+    "fastify-plugin": "^4.5.1",
     "fastq": "^1.13.0",
     "ipaddr.js": "^2.0.1",
     "nanoerror": "^1.2.1",
     "streamx": "^2.12.5",
     "tempy": "^1.0.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.25.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.33.0"
   },
   "devDependencies": {
+    "@types/events": "^3.0.2",
+    "@types/node": "^20.8.10",
+    "@types/streamx": "^2.9.3",
     "fastify": "^4.6.0",
     "require-inject": "^1.4.4",
     "simple-get": "^4.0.1",
     "standard": "^17.0.0",
     "tap": "^16.3.0",
-    "tsup": "^6.2.3",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2",
     "uvu": "^0.5.3",
     "ws": "^8.9.0"
   },
