@@ -3,15 +3,17 @@
   "version": "1.1.0",
   "description": "uWebSockets.js for fastify",
   "type": "module",
-  "main": "./dist/index.cjs",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.cjs",
-      "import": "./src/index.js"
+      "types": "./types/index.d.ts",
+      "import": "./src/server.js",
+      "require": "./src/server.cjs"
     },
     "./plugin": {
-      "require": "./dist/plugin.cjs",
-      "import": "./src/plugin.js"
+      "types": "./types/index.d.ts",
+      "import": "./src/plugin.js",
+      "require": "./src/plugin.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -24,18 +26,18 @@
   ],
   "scripts": {
     "start": "node index.js",
-    "build": "tsup src/index.js",
+    "build": "rm -rf dist && tsup src/server.js src/plugin.js --splitting",
     "test": "uvu --ignore tests/fastify",
-    "posttest": "npm run lint && tsc -p jsconfig.json",
+    "posttest": "npm run lint && tsc",
     "lint": "standard",
     "prepublishOnly": "npm test && npm run build",
-    "types": "tsc src/index.js --declaration --allowJs --emitDeclarationOnly --outDir types"
+    "types": "dts-buddy"
   },
   "dependencies": {
     "fastify-plugin": "^4.5.1",
     "fastq": "^1.13.0",
     "ipaddr.js": "^2.0.1",
-    "nanoerror": "^1.2.1",
+    "nanoerror": "^2.0.0",
     "streamx": "^2.12.5",
     "tempy": "^1.0.1",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.33.0"
@@ -44,7 +46,8 @@
     "@types/events": "^3.0.2",
     "@types/node": "^20.8.10",
     "@types/streamx": "^2.9.3",
-    "fastify": "^4.6.0",
+    "dts-buddy": "^0.3.0",
+    "fastify": "^4.24.3",
     "require-inject": "^1.4.4",
     "simple-get": "^4.0.1",
     "standard": "^17.0.0",

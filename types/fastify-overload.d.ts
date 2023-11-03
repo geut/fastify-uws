@@ -1,9 +1,10 @@
-import { FastifyRequest, FastifyPluginCallback, RawServerBase, RawServerDefault, RawRequestDefaultExpression, RawReplyDefaultExpression, RequestGenericInterface, ContextConfigDefault, FastifyInstance, FastifySchema, FastifyTypeProvider, FastifyTypeProviderDefault, FastifyBaseLogger } from 'fastify';
+/// <reference types="node" />
+
+import { IncomingMessage, ServerResponse, Server } from 'http';
+import { FastifyRequest, RawServerBase, RawServerDefault, RawRequestDefaultExpression, RawReplyDefaultExpression, RequestGenericInterface, ContextConfigDefault, FastifyInstance, FastifySchema, FastifyTypeProvider, FastifyTypeProviderDefault, FastifyBaseLogger } from 'fastify';
 import * as fastify from 'fastify';
-import { FastifyReply } from 'fastify/types/reply';
-import { preCloseHookHandler, preCloseAsyncHookHandler } from 'fastify/types/hooks';
-import { RouteGenericInterface } from 'fastify/types/route';
-import { WebSocketServer, WebSocket } from './websocket-server.js';
+import { RouteGenericInterface } from 'fastify/types/route.js';
+import { WebSocketServer, WebSocket } from '../src/websocket-server.js';
 
 declare module 'fastify' {
   interface RouteShorthandOptions<
@@ -47,7 +48,7 @@ declare module 'fastify' {
 }
 
 declare namespace fastifyUws {
-  interface WebsocketRouteOptions<
+  export interface WebsocketRouteOptions<
     RawServer extends RawServerBase = RawServerDefault,
     RawRequest extends RawRequestDefaultExpression<RawServer> = RawRequestDefaultExpression<RawServer>,
     RequestGeneric extends RequestGenericInterface = RequestGenericInterface,

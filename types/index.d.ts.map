@@ -1,0 +1,47 @@
+{
+	"version": 3,
+	"file": "index.d.ts",
+	"names": [
+		"Server",
+		"serverFactory",
+		"getUws",
+		"FastifyServerFactory",
+		"WebSocket",
+		"WebSocketStream",
+		"WebSocketServer",
+		"UWSocket",
+		"kHttps",
+		"kReq",
+		"kHeaders",
+		"kUrl",
+		"kAddress",
+		"kEnded",
+		"kHandler",
+		"kListenSocket",
+		"kListen",
+		"kApp",
+		"kClosed",
+		"kWs",
+		"Request",
+		"Response",
+		"FastifyPluginCallback",
+		"WSOptions"
+	],
+	"sources": [
+		"../src/server.js",
+		"../src/websocket-server.js",
+		"../src/symbols.js",
+		"../src/request.js",
+		"../src/response.js",
+		"../src/plugin.js"
+	],
+	"sourcesContent": [
+		null,
+		null,
+		null,
+		null,
+		null,
+		null
+	],
+	"mappings": ";;;;;;cAkDaA,MAAMA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;cAmJNC,aAAaA;iBAWbC,MAAMA;;;;;;;;aAxMYC,oBAAoBA;;OCyDtCC,SAASA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;cAsJTC,eAAeA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;OA8DfC,eAAeA;;;;;;;;;;;;;;;;;;;;;;;;MAhRmDC,QAAQA;;;;;;;;;;;;;;;;;;;;;;;;;;;;OCL1EC,MAAMA;OACNC,IAAIA;OAGJC,QAAQA;OACRC,IAAIA;OACJC,QAAQA;OAIRC,MAAMA;OAGNC,QAAQA;OACRC,aAAaA;OACbC,OAAOA;OACPC,IAAIA;OACJC,OAAOA;OACPC,GAAGA;OCTHC,OAAOA;;;;;;;;;;;;;;;;;;OC2BPC,QAAQA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;aChCUC,qBAAqBA;aAENC,SAASA;aFG1CH,OAAOA;;;;;;;;;OFwDPhB,SAASA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;OChETK,IAAIA;OAGJC,QAAQA;OACRC,IAAIA;OAKJE,MAAMA"
+}

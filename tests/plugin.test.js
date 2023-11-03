@@ -6,7 +6,7 @@ import fastify from 'fastify'
 import WebSocket from 'ws'
 import sget from 'simple-get'
 
-import { serverFactory } from '../src/index.js'
+import { serverFactory } from '../src/server.js'
 import fastifyUwsPlugin from '../src/plugin.js'
 
 const get = (opts) => new Promise((resolve, reject) => sget.concat(opts, (err, _, data) => {

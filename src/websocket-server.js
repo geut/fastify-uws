@@ -286,7 +286,7 @@ export class WebSocketServer extends EventEmitter {
   }
 
   /**
-   * @param {import('./index.js').Server} server
+   * @param {import('./server.js').Server} server
    */
   addServer (server) {
     const { options } = this

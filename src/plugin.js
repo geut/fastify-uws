@@ -1,4 +1,4 @@
-/// <reference path="./plugin.d.ts" />
+/// <reference path="../types/fastify-overload.d.ts" />
 
 /**
  * @template T
@@ -27,10 +27,10 @@ function defaultErrorHandler (err, conn, request) {
   request.raw.destroy(err)
 }
 
-/** @type {FastifyPluginCallback<{ errorHandler?: typeof defaultErrorHandler, options?: WSOptions }>} */
-function fastifyUwsPlugin (fastify, opts, next) {
+/** @type {FastifyPluginCallback<{ errorHandler?: typeof defaultErrorHandler } & WSOptions>} */
+function fastifyUws (fastify, opts, next) {
   const { server } = fastify
-  const { errorHandler = defaultErrorHandler, options } = opts || {}
+  const { errorHandler = defaultErrorHandler, ...options } = opts || {}
 
   if (errorHandler && typeof errorHandler !== 'function') {
     return next(new Error('invalid errorHandler function'))
@@ -114,8 +114,8 @@ function fastifyUwsPlugin (fastify, opts, next) {
   next()
 }
 
-/** @type {typeof fastifyUwsPlugin} */
-export default fp(fastifyUwsPlugin, {
+/** @type {typeof fastifyUws} */
+export default fp(fastifyUws, {
   fastify: '>= 4.0.0',
-  name: '@geut/fastify-uws'
+  name: 'fastify-uws'
 })

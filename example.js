@@ -1,5 +1,5 @@
 import fastify from 'fastify'
-import { serverFactory, getUws, WebSocketStream } from './src/index.js'
+import { serverFactory, getUws, WebSocketStream } from './src/server.js'
 
 import fastifyUwsPlugin from './src/plugin.js'
 

@@ -1,9 +1,13 @@
 /**
  * @typedef {{
-*  connectionTimeout?: number
-*  https?: { key: string, cert: string } | Parameters<typeof uws.SSLApp>[0]
-* }} ServerOptions
-*/
+ *  connectionTimeout?: number
+ *  https?: { key: string, cert: string } | Parameters<typeof uws.SSLApp>[0]
+ * }} ServerOptions
+ */
+
+/**
+ * @typedef {import('fastify').FastifyServerFactory} FastifyServerFactory
+ */
 
 import EventEmitter from 'events'
 import { writeFileSync } from 'fs'
@@ -190,13 +194,12 @@ export class Server extends EventEmitter {
   }
 }
 
-/**
- *
- * @param {(req: Request, res: Response) => void} handler
- * @param {ServerOptions} opts
- * @returns
- */
-export const serverFactory = (handler, opts) => new Server(handler, opts)
+/** @type {FastifyServerFactory} */
+export const serverFactory = (handler, opts) => {
+  // @ts-ignore
+  // eslint-disable-next-line no-new
+  return new Server(handler, opts)
+}
 
 /**
  *
