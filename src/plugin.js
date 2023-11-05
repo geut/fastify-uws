@@ -1,7 +1,12 @@
-// this plugin is inspired by https://github.com/fastify/fastify-websocket
+/**
+ * @template T
+ * @typedef {import('fastify').FastifyPluginCallback<T>} FastifyPluginCallback */
+
+/** @typedef {import('./websocket-server.js').WSOptions} WSOptions */
+
+/** @typedef {import('./request.js').Request} Request */
 
 import fp from 'fastify-plugin'
-
 import { WebSocketServer, WebSocket } from './websocket-server.js'
 
 import {
@@ -9,14 +14,21 @@ import {
   kRes
 } from './symbols.js'
 
-function defaultErrorHandler (err, request) {
+/**
+ * @this {import('fastify').FastifyInstance}
+ * @param {Error} err
+ * @param {WebSocket} conn
+ * @param {import('fastify').FastifyRequest} request
+ */
+function defaultErrorHandler (err, conn, request) {
   request.log.error(err)
   request.raw.destroy(err)
 }
 
-function fastifyUws (fastify, opts = {}, next) {
+/** @type {FastifyPluginCallback<{ errorHandler?: typeof defaultErrorHandler } & WSOptions>} */
+function fastifyUws (fastify, opts, next) {
   const { server } = fastify
-  const { errorHandler = defaultErrorHandler, options } = opts
+  const { errorHandler = defaultErrorHandler, ...options } = opts || {}
 
   if (errorHandler && typeof errorHandler !== 'function') {
     return next(new Error('invalid errorHandler function'))
@@ -27,11 +39,19 @@ function fastifyUws (fastify, opts = {}, next) {
   fastify.decorate('websocketServer', websocketServer)
 
   fastify.addHook('onRoute', routeOptions => {
-    const isWebSocket = !!routeOptions.ws
-    if (!isWebSocket || routeOptions.method === 'HEAD' || routeOptions.method === 'OPTIONS') return
+    const isWebSocket = !!routeOptions.uws || routeOptions.uwsHandler
+    if (!isWebSocket || routeOptions.method !== 'GET') return
 
-    const wsOptions = typeof routeOptions.ws === 'object' ? routeOptions.ws : {}
-    const handler = routeOptions.handler
+    const wsOptions = typeof routeOptions.uws === 'object' ? routeOptions.uws : {}
+
+    let httpHandler, uwsHandler
+    if (routeOptions.uwsHandler) {
+      httpHandler = routeOptions.handler
+      uwsHandler = routeOptions.uwsHandler
+    } else {
+      uwsHandler = routeOptions.handler
+    }
+
     const namespace = Buffer.from(routeOptions.url)
 
     const topics = {}
@@ -42,7 +62,7 @@ function fastifyUws (fastify, opts = {}, next) {
     }
 
     routeOptions.handler = function (request, reply) {
-      const requestRaw = request.raw
+      const requestRaw = /** @type {Request} */(/** @type {unknown} */(request.raw))
       if (requestRaw[kWs]) {
         reply.hijack()
         const uRes = requestRaw.socket[kRes]
@@ -51,6 +71,8 @@ function fastifyUws (fastify, opts = {}, next) {
         uRes.upgrade({
           req: requestRaw,
           handler: (ws) => {
+            request.uws = true
+
             const conn = new WebSocket(namespace, ws, topics)
             let result
             try {
@@ -67,13 +89,13 @@ function fastifyUws (fastify, opts = {}, next) {
                 conn.end()
               })
 
-              result = handler.call(this, request, conn)
+              result = uwsHandler.call(this, conn, request)
             } catch (err) {
-              return errorHandler.call(this, err, request, conn)
+              return errorHandler.call(this, err, conn, request)
             }
 
             if (result && typeof result.catch === 'function') {
-              result.catch(err => errorHandler.call(this, err, request, conn))
+              result.catch(err => errorHandler.call(this, err, conn, request))
             }
           }
         },
@@ -82,7 +104,7 @@ function fastifyUws (fastify, opts = {}, next) {
         requestRaw.headers['sec-websocket-extensions'],
         requestRaw[kWs])
       } else {
-        return handler.call(this, request, reply)
+        return httpHandler.call(this, request, reply)
       }
     }
   })
@@ -90,7 +112,8 @@ function fastifyUws (fastify, opts = {}, next) {
   next()
 }
 
+/** @type {typeof fastifyUws} */
 export default fp(fastifyUws, {
   fastify: '>= 4.0.0',
-  name: '@fastify/websocket'
+  name: 'fastify-uws'
 })

@@ -1,3 +1,14 @@
+/**
+ * @typedef {{
+ *  connectionTimeout?: number
+ *  https?: { key: string, cert: string } | Parameters<typeof uws.SSLApp>[0]
+ * }} ServerOptions
+ */
+
+/**
+ * @typedef {import('fastify').FastifyServerFactory} FastifyServerFactory
+ */
+
 import EventEmitter from 'events'
 import { writeFileSync } from 'fs'
 import assert from 'assert'
@@ -36,18 +47,23 @@ function createApp (https) {
 }
 
 const mainServer = {}
+
 export class Server extends EventEmitter {
+  /**
+   * @param {(req: Request, res: Response) => void} handler
+   * @param {ServerOptions} opts
+   */
   constructor (handler, opts = {}) {
     super()
 
     const { connectionTimeout = 0, https = false } = opts
 
-    assert(!https || (typeof https === 'object' && typeof https.key === 'string' && typeof https.cert === 'string'),
-      'https must be a valid object { key: string, cert: string }')
+    assert(!https || typeof https === 'object', 'https must be a valid object { key: string, cert: string } or follow the uws.AppOptions')
 
     this[kHandler] = handler
     this.timeout = connectionTimeout
     this[kHttps] = https
+    /** @type {import('./websocket-server.js').WebSocketServer} */
     this[kWs] = null
     this[kAddress] = null
     this[kListenSocket] = null
@@ -55,18 +71,30 @@ export class Server extends EventEmitter {
     this[kClosed] = false
   }
 
+  /** @type {boolean} */
   get encrypted () {
     return !!this[kHttps]
   }
 
+  /**
+   * @param {number} timeout
+   */
   setTimeout (timeout) {
     this.timeout = timeout
   }
 
+  /**
+   * @returns {{ address: string, port: number }}
+   */
   address () {
     return this[kAddress]
   }
 
+  /**
+   *
+   * @param {{ host: string, port: number }} listenOptions
+   * @param {() => void} cb
+   */
   listen (listenOptions, cb) {
     this[kListen](listenOptions)
       .then(() => cb && cb())
@@ -76,6 +104,9 @@ export class Server extends EventEmitter {
       })
   }
 
+  /**
+   * @param {() => void} [cb]
+   */
   close (cb = () => {}) {
     if (this[kClosed]) return cb()
     const port = this[kAddress]?.port
@@ -98,7 +129,6 @@ export class Server extends EventEmitter {
   }
 
   ref () {}
-
   unref () {}
 
   async [kListen] ({ port, host }) {
@@ -164,15 +194,25 @@ export class Server extends EventEmitter {
   }
 }
 
-export const serverFactory = (handler, opts) => new Server(handler, opts)
+/** @type {FastifyServerFactory} */
+export const serverFactory = (handler, opts) => {
+  // @ts-ignore
+  // eslint-disable-next-line no-new
+  return new Server(handler, opts)
+}
 
-export { default as fastifyUws } from './plugin.js'
-
+/**
+ *
+ * @param {import('fastify').FastifyInstance} fastify
+ * @returns {uws.TemplatedApp}
+ */
 export const getUws = (fastify) => {
   const { server } = fastify
   if (!server[kApp]) throw new ERR_UWS_APP_NOT_FOUND()
   return server[kApp]
 }
+
+export { WebSocketStream } from './websocket-server.js'
 
 export {
   DEDICATED_COMPRESSOR_128KB,

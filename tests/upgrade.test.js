@@ -6,7 +6,7 @@ import { test } from 'uvu'
 import * as assert from 'uvu/assert'
 import Fastify from 'fastify'
 
-import { serverFactory } from '../src/index.js'
+import { serverFactory } from '../src/server.js'
 
 test('upgrade to both servers', async () => {
   const results = await lookup('localhost', { all: true })

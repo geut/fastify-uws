@@ -1,5 +1,5 @@
 import { test } from 'uvu'
-import { serverFactory } from '../src/index.js'
+import { serverFactory } from '../src/server.js'
 import testFastify from './fastify/index.cjs'
 
 test('fastify integration tests', async () => {

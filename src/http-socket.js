@@ -25,6 +25,9 @@ const toHex = (buf, start, end) => buf.slice(start, end).toString('hex')
 
 const noop = () => {}
 
+/**
+ * @this {HTTPSocket}
+ */
 function onAbort () {
   this.aborted = true
   this.emit('aborted')
@@ -44,6 +47,9 @@ function onTimeout () {
   }
 }
 
+/**
+ * @this {HTTPSocket}
+ */
 function onWrite (data, cb) {
   const res = this[kRes]
 
