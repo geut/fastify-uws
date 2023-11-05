@@ -30,7 +30,7 @@
     "test": "uvu --ignore tests/fastify",
     "posttest": "npm run lint && tsc",
     "lint": "standard",
-    "prepublishOnly": "npm test && npm run build",
+    "prepublishOnly": "npm test && npm run build && npm run types",
     "types": "node scripts/generate-dts.js"
   },
   "dependencies": {
