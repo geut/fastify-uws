@@ -7,12 +7,12 @@
     ".": {
       "types": "./types/server.d.ts",
       "import": "./src/server.js",
-      "require": "./src/server.cjs"
+      "require": "./dist/server.cjs"
     },
     "./plugin": {
       "types": "./types/plugin.d.ts",
       "import": "./src/plugin.js",
-      "require": "./src/plugin.cjs"
+      "require": "./dist/plugin.cjs"
     },
     "./package.json": "./package.json"
   },
