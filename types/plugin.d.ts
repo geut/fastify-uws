@@ -1,4 +1,3 @@
-import "./fastify-overload.d.ts"
 /// <reference types="node" />
 declare const _default: typeof fastifyUws;
 export default _default;
@@ -16,3 +15,4 @@ declare function fastifyUws(instance: import("fastify").FastifyInstance<import("
  */
 declare function defaultErrorHandler(this: import("fastify").FastifyInstance<import("fastify").RawServerDefault, import("http").IncomingMessage, import("http").ServerResponse<import("http").IncomingMessage>, import("fastify").FastifyBaseLogger, import("fastify").FastifyTypeProviderDefault>, err: Error, conn: WebSocket, request: import('fastify').FastifyRequest): void;
 import { WebSocket } from './websocket-server.js';
+import "./fastify-overload.d.ts"

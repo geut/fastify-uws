@@ -181,3 +181,4 @@ export type WebsocketServerEvent = {
 import { kEnded } from './symbols.js';
 import { Duplex } from 'streamx';
 import { Request } from './request.js';
+import uws from "uWebSockets.js"

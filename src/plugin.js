@@ -1,5 +1,3 @@
-/// <reference path="../types/fastify-overload.d.ts" />
-
 /**
  * @template T
  * @typedef {import('fastify').FastifyPluginCallback<T>} FastifyPluginCallback */
