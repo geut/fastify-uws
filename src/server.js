@@ -1,7 +1,15 @@
 /**
+ * @typedef {import('uWebSockets.js').TemplatedApp} TemplatedApp
+ */
+
+/**
+ * @typedef {import('uWebSockets.js').SSLApp} SSLApp
+ */
+
+/**
  * @typedef {{
  *  connectionTimeout?: number
- *  https?: { key: string, cert: string } | Parameters<typeof uws.SSLApp>[0]
+ *  https?: { key: string, cert: string } | Parameters<SSLApp>[0]
  * }} ServerOptions
  */
 
@@ -204,7 +212,7 @@ export const serverFactory = (handler, opts) => {
 /**
  *
  * @param {import('fastify').FastifyInstance} fastify
- * @returns {uws.TemplatedApp}
+ * @returns {TemplatedApp}
  */
 export const getUws = (fastify) => {
   const { server } = fastify

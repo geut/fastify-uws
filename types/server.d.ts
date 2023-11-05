@@ -38,7 +38,10 @@ export class Server {
         host: any;
     }): Promise<any>;
     [kHandler]: (req: Request, res: Response) => void;
-    [kHttps]: any;
+    [kHttps]: boolean | import("uWebSockets.js").AppOptions | {
+        key: string;
+        cert: string;
+    };
     /** @type {import('./websocket-server.js').WebSocketServer} */
     [kWs]: import('./websocket-server.js').WebSocketServer;
     [kAddress]: any;
@@ -48,14 +51,16 @@ export class Server {
 }
 /** @type {FastifyServerFactory} */
 export const serverFactory: FastifyServerFactory;
-export function getUws(fastify: import('fastify').FastifyInstance): uws.TemplatedApp;
+export function getUws(fastify: import('fastify').FastifyInstance): TemplatedApp;
 export { WebSocketStream } from "./websocket-server.js";
+export type TemplatedApp = import('uWebSockets.js').TemplatedApp;
+export type SSLApp = typeof import("uWebSockets.js").SSLApp;
 export type ServerOptions = {
     connectionTimeout?: number;
     https?: {
         key: string;
         cert: string;
-    } | Parameters<typeof uws.SSLApp>[0];
+    } | Parameters<SSLApp>[0];
 };
 export type FastifyServerFactory = import('fastify').FastifyServerFactory;
 import { kListen } from './symbols.js';
@@ -69,4 +74,3 @@ import { kListenSocket } from './symbols.js';
 import { kApp } from './symbols.js';
 import { kClosed } from './symbols.js';
 export { DEDICATED_COMPRESSOR_128KB, DEDICATED_COMPRESSOR_16KB, DEDICATED_COMPRESSOR_256KB, DEDICATED_COMPRESSOR_32KB, DEDICATED_COMPRESSOR_3KB, DEDICATED_COMPRESSOR_4KB, DEDICATED_COMPRESSOR_64KB, DEDICATED_COMPRESSOR_8KB, DEDICATED_DECOMPRESSOR, DEDICATED_DECOMPRESSOR_16KB, DEDICATED_DECOMPRESSOR_1KB, DEDICATED_DECOMPRESSOR_2KB, DEDICATED_DECOMPRESSOR_32KB, DEDICATED_DECOMPRESSOR_4KB, DEDICATED_DECOMPRESSOR_512B, DEDICATED_DECOMPRESSOR_8KB, DISABLED, SHARED_COMPRESSOR, SHARED_DECOMPRESSOR } from "uWebSockets.js";
-import uws from "uWebSockets.js"

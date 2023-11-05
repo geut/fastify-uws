@@ -8,8 +8,8 @@ export class WebSocket {
     constructor(namespace: any, connection: any, topics?: {});
     /** @type {Buffer} */
     namespace: Buffer;
-    /** @type {uws.WebSocket<any>} */
-    connection: uws.WebSocket<any>;
+    /** @type {UWebSocket<any>} */
+    connection: UWebSocket<any>;
     topics: {};
     get uws(): boolean;
     /**
@@ -18,46 +18,46 @@ export class WebSocket {
      */
     allocTopic(topic: Buffer | string): Buffer;
     /**
-     * @param {uws.RecognizedString} message
+     * @param {RecognizedString} message
      * @param {boolean} [isBinary]
      * @param {boolean} [compress]
      */
-    send(message: uws.RecognizedString, isBinary?: boolean, compress?: boolean): any;
+    send(message: RecognizedString, isBinary?: boolean, compress?: boolean): number;
     /**
      * @param {Buffer | string} topic
-     * @param {uws.RecognizedString} message
+     * @param {RecognizedString} message
      * @param {boolean} [isBinary]
      * @param {boolean} [compress]
      */
-    publish(topic: Buffer | string, message: uws.RecognizedString, isBinary?: boolean, compress?: boolean): any;
+    publish(topic: Buffer | string, message: RecognizedString, isBinary?: boolean, compress?: boolean): boolean;
     /**
      * @param {Buffer | string} topic
      */
-    subscribe(topic: Buffer | string): any;
+    subscribe(topic: Buffer | string): boolean;
     /**
      * @param {Buffer | string} topic
      */
-    unsubscribe(topic: Buffer | string): any;
+    unsubscribe(topic: Buffer | string): boolean;
     /**
      * @param {Buffer | string} topic
      */
-    isSubscribed(topic: Buffer | string): any;
-    getTopics(): any;
-    close(): any;
+    isSubscribed(topic: Buffer | string): boolean;
+    getTopics(): string[];
+    close(): void;
     /**
      * @param {number} [code]
-     * @param {uws.RecognizedString} [shortMessage]
+     * @param {RecognizedString} [shortMessage]
      */
-    end(code?: number, shortMessage?: uws.RecognizedString): any;
+    end(code?: number, shortMessage?: RecognizedString): void;
     /**
      * @param {() => void} cb
      */
-    cork(cb: () => void): any;
-    getBufferedAmount(): any;
+    cork(cb: () => void): import("uWebSockets.js").WebSocket<any>;
+    getBufferedAmount(): number;
     /**
-     * @param {uws.RecognizedString} message
+     * @param {RecognizedString} message
      */
-    ping(message: uws.RecognizedString): any;
+    ping(message: RecognizedString): number;
     /**
      * @template {keyof WebsocketEvent} T
      * @param {T} eventName
@@ -146,11 +146,14 @@ export class WebSocketServer {
      */
     once<T_1 extends keyof WebsocketServerEvent>(eventName: T_1, listener: WebsocketServerEvent[T_1]): any;
 }
+export type UWebSocket<T> = import('uWebSockets.js').WebSocket<T>;
+export type TemplatedApp = import('uWebSockets.js').TemplatedApp;
+export type RecognizedString = import('uWebSockets.js').RecognizedString;
 export type UserData = {
     req: Request;
-    handler: (ws: uws.WebSocket<UserData>) => void;
+    handler: (ws: UWebSocket<UserData>) => void;
 };
-export type UWSocket = uws.WebSocket<UserData> & {
+export type UWSocket = UWebSocket<UserData> & {
     req: Request;
     websocket: WebSocket;
 };
@@ -181,4 +184,3 @@ export type WebsocketServerEvent = {
 import { kEnded } from './symbols.js';
 import { Duplex } from 'streamx';
 import { Request } from './request.js';
-import uws from "uWebSockets.js"

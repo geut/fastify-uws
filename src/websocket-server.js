@@ -1,9 +1,22 @@
 /**
- * @typedef {{ req: Request, handler: (ws: uws.WebSocket<UserData>) => void }} UserData
+ * @template T
+ * @typedef {import('uWebSockets.js').WebSocket<T>} UWebSocket
  */
 
 /**
- * @typedef {uws.WebSocket<UserData> & { req: Request, websocket: WebSocket }} UWSocket
+ * @typedef {import('uWebSockets.js').TemplatedApp} TemplatedApp
+ */
+
+/**
+ * @typedef {import('uWebSockets.js').RecognizedString} RecognizedString
+ */
+
+/**
+ * @typedef {{ req: Request, handler: (ws: UWebSocket<UserData>) => void }} UserData
+ */
+
+/**
+ * @typedef {UWebSocket<UserData> & { req: Request, websocket: WebSocket }} UWSocket
  */
 
 /**
@@ -87,7 +100,7 @@ export class WebSocket extends EventEmitter {
 
     /** @type {Buffer} */
     this.namespace = namespace
-    /** @type {uws.WebSocket<any>} */
+    /** @type {UWebSocket<any>} */
     this.connection = connection
     connection.websocket = this
     this.topics = topics // we maintain a cache of buffer topics
@@ -108,7 +121,7 @@ export class WebSocket extends EventEmitter {
   }
 
   /**
-   * @param {uws.RecognizedString} message
+   * @param {RecognizedString} message
    * @param {boolean} [isBinary]
    * @param {boolean} [compress]
    */
@@ -119,7 +132,7 @@ export class WebSocket extends EventEmitter {
 
   /**
    * @param {Buffer | string} topic
-   * @param {uws.RecognizedString} message
+   * @param {RecognizedString} message
    * @param {boolean} [isBinary]
    * @param {boolean} [compress]
    */
@@ -165,7 +178,7 @@ export class WebSocket extends EventEmitter {
 
   /**
    * @param {number} [code]
-   * @param {uws.RecognizedString} [shortMessage]
+   * @param {RecognizedString} [shortMessage]
    */
   end (code, shortMessage) {
     if (this[kEnded]) return
@@ -187,7 +200,7 @@ export class WebSocket extends EventEmitter {
   }
 
   /**
-   * @param {uws.RecognizedString} message
+   * @param {RecognizedString} message
    */
   ping (message) {
     if (this[kEnded]) return
@@ -290,7 +303,7 @@ export class WebSocketServer extends EventEmitter {
    */
   addServer (server) {
     const { options } = this
-    /** @type {uws.TemplatedApp} */
+    /** @type {TemplatedApp} */
     const app = server[kApp]
     const listenerHandler = server[kHandler]
 

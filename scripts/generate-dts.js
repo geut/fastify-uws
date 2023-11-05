@@ -8,12 +8,3 @@ fs.writeFileSync(
   'types/plugin.d.ts',
   types + 'import "./fastify-overload.d.ts"'
 )
-
-// for some reason tsc exclude uwebsocket.js module
-for (const file of ['server.d.ts', 'websocket-server.d.ts']) {
-  const types = fs.readFileSync(`types/${file}`, 'utf-8')
-  fs.writeFileSync(
-    `types/${file}`,
-    types + 'import uws from "uWebSockets.js"'
-  )
-}
