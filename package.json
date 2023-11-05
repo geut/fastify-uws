@@ -3,15 +3,14 @@
   "version": "1.1.0",
   "description": "uWebSockets.js for fastify",
   "type": "module",
-  "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./types/index.d.ts",
+      "types": "./types/server.d.ts",
       "import": "./src/server.js",
       "require": "./src/server.cjs"
     },
     "./plugin": {
-      "types": "./types/index.d.ts",
+      "types": "./types/plugin.d.ts",
       "import": "./src/plugin.js",
       "require": "./src/plugin.cjs"
     },
@@ -32,7 +31,7 @@
     "posttest": "npm run lint && tsc",
     "lint": "standard",
     "prepublishOnly": "npm test && npm run build",
-    "types": "dts-buddy"
+    "types": "node scripts/generate-dts.js"
   },
   "dependencies": {
     "fastify-plugin": "^4.5.1",
@@ -47,7 +46,7 @@
     "@types/events": "^3.0.2",
     "@types/node": "^20.8.10",
     "@types/streamx": "^2.9.3",
-    "dts-buddy": "^0.3.0",
+    "execa": "^8.0.1",
     "fastify": "^4.24.3",
     "require-inject": "^1.4.4",
     "simple-get": "^4.0.1",
