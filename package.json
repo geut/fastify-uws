@@ -40,7 +40,7 @@
     "nanoerror": "^2.0.0",
     "streamx": "^2.12.5",
     "tempy": "^1.0.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.33.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.42.0"
   },
   "devDependencies": {
     "@types/events": "^3.0.2",

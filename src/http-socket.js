@@ -55,23 +55,20 @@ function onWrite (data, cb) {
 
   this[kReadyState].write = true
 
-  if (this[kHead]) {
-    writeHead(res, this[kHead])
-    this[kHead] = null
-  }
+  res.cork(() => {
+    if (this[kHead]) {
+      writeHead(res, this[kHead])
+      this[kHead] = null
+    }
 
-  const drained = res.write(getChunk(data))
-  if (drained) {
-    this.bytesWritten += byteLength(data)
-    return cb()
-  }
-  drain(this, res, data, cb)
-}
+    const drained = res.write(getChunk(data))
+    if (drained) {
+      this.bytesWritten += byteLength(data)
+      return cb()
+    }
 
-function cork (res, data) {
-  writeHead(res, this[kHead])
-  this[kHead] = null
-  res.end(data)
+    drain(this, res, data, cb)
+  })
 }
 
 function end (socket, data) {
@@ -79,15 +76,16 @@ function end (socket, data) {
 
   const res = socket[kRes]
 
-  if (socket[kHead]) {
-    res.cork(cork.bind(socket, res, getChunk(data)))
-  } else {
+  res.cork(() => {
+    if (socket[kHead]) {
+      writeHead(res, socket[kHead])
+      socket[kHead] = null
+    }
     res.end(getChunk(data))
-  }
-
-  socket.bytesWritten += byteLength(data)
-  socket.emit('close')
-  socket.emit('finish')
+    socket.bytesWritten += byteLength(data)
+    socket.emit('close')
+    socket.emit('finish')
+  })
 }
 
 function drain (socket, res, data, cb) {
@@ -105,14 +103,16 @@ function drain (socket, res, data, cb) {
   const onDrain = () => {
     if (done) return
 
-    done = res.write(getChunk(data))
-    if (done) {
-      socket.writableNeedDrain = false
-      this.bytesWritten += byteLength(data)
-      socket.removeListener('close', onClose)
-      socket.removeListener('drain', onDrain)
-      cb()
-    }
+    res.cork(() => {
+      done = res.write(getChunk(data))
+      if (done) {
+        socket.writableNeedDrain = false
+        this.bytesWritten += byteLength(data)
+        socket.removeListener('close', onClose)
+        socket.removeListener('drain', onDrain)
+        cb()
+      }
+    })
   }
 
   socket.on('drain', onDrain)
