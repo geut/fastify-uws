@@ -20,6 +20,7 @@
 import EventEmitter from 'events'
 import { writeFileSync } from 'fs'
 import assert from 'assert'
+import dns from 'dns/promises'
 
 import uws from 'uWebSockets.js'
 import ipaddr from 'ipaddr.js'
@@ -146,15 +147,16 @@ export class Server extends EventEmitter {
 
     port = (port === undefined || port === null) ? 0 : Number(port)
 
+    const lookupAddress = await dns.lookup(host)
+
     this[kAddress] = {
-      address: host === 'localhost' ? '::1' : host,
+      ...lookupAddress,
       port
     }
 
     if (this[kAddress].address.startsWith('[')) throw new ERR_ENOTFOUND(this[kAddress].address)
 
     const parsedAddress = ipaddr.parse(this[kAddress].address)
-    this[kAddress].family = parsedAddress.kind() === 'ipv6' ? 'IPv6' : 'IPv4'
     const longAddress = parsedAddress.toNormalizedString()
 
     const app = this[kApp]
