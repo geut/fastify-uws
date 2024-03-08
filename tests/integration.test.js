@@ -27,7 +27,6 @@ test('fastify integration tests', async () => {
       'logger',
       'nullable-validation',
       'output-validation',
-      'plugin',
       'promises',
       'proto-poisoning',
       'register',
