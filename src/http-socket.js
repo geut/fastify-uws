@@ -107,7 +107,7 @@ function drain (socket, res, data, cb) {
       done = res.write(getChunk(data))
       if (done) {
         socket.writableNeedDrain = false
-        this.bytesWritten += byteLength(data)
+        socket.bytesWritten += byteLength(data)
         socket.removeListener('close', onClose)
         socket.removeListener('drain', onDrain)
         cb()
