@@ -1,93 +1,80 @@
 {
-  "name": "@geut/fastify-uws",
-  "version": "3.1.1",
-  "description": "uWebSockets.js for fastify",
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./types/server.d.ts",
-      "import": "./src/server.js",
-      "require": "./dist/server.cjs"
-    },
-    "./plugin": {
-      "types": "./types/plugin.d.ts",
-      "import": "./src/plugin.js",
-      "require": "./dist/plugin.cjs"
-    },
-    "./package.json": "./package.json"
-  },
-  "workspaces": [
-    "tests/fastify/module"
-  ],
-  "files": [
-    "types",
-    "dist",
-    "src"
-  ],
-  "scripts": {
-    "start": "node index.js",
-    "build": "rm -rf dist && tsup src/server.js src/plugin.js --splitting",
-    "test": "uvu --ignore tests/fastify",
-    "posttest": "npm run lint && tsc",
-    "lint": "standard",
-    "prepublishOnly": "npm test && npm run build && npm run types",
-    "types": "node scripts/generate-dts.js"
-  },
-  "dependencies": {
-    "fastify-plugin": "^4.5.1",
-    "fastq": "^1.13.0",
-    "ipaddr.js": "^2.0.1",
-    "nanoerror": "^2.0.0",
-    "streamx": "^2.12.5",
-    "tempy": "^1.0.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.42.0"
-  },
-  "devDependencies": {
-    "@types/events": "^3.0.2",
-    "@types/node": "^20.8.10",
-    "@types/streamx": "^2.9.3",
-    "execa": "^8.0.1",
-    "fastify": "^4.24.3",
-    "require-inject": "^1.4.4",
-    "simple-get": "^4.0.1",
-    "standard": "^17.0.0",
-    "tap": "^16.3.0",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2",
-    "uvu": "^0.5.3",
-    "ws": "^8.9.0"
-  },
-  "standard": {
-    "env": [
-      "node",
-      "browser"
-    ],
-    "ignore": [
-      "tests/fastify/**"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/geut/fastify-uws.git"
-  },
-  "keywords": [
-    "fastify",
-    "uWebSockets.js",
-    "fastify-plugin"
-  ],
-  "author": {
-    "name": "GEUT",
-    "email": "contact@geutstudio.com"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/geut/fastify-uws/issues"
-  },
-  "homepage": "https://github.com/geut/fastify-uws#readme",
-  "publishConfig": {
-    "access": "public"
-  },
-  "engines": {
-    "node": ">=18"
-  }
+	"name": "@geut/fastify-uws",
+	"version": "3.1.1",
+	"description": "uWebSockets.js for fastify",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./types/server.d.ts",
+			"import": "./src/server.js",
+			"require": "./dist/server.cjs"
+		},
+		"./plugin": {
+			"types": "./types/plugin.d.ts",
+			"import": "./src/plugin.js",
+			"require": "./dist/plugin.cjs"
+		},
+		"./package.json": "./package.json"
+	},
+	"workspaces": ["tests/fastify/module"],
+	"files": ["types", "dist", "src"],
+	"scripts": {
+		"start": "node index.js",
+		"build": "rm -rf dist && tsup src/server.js src/plugin.js --splitting",
+		"test": "uvu --ignore tests/fastify",
+		"posttest": "npm run lint && tsc",
+		"lint": "biome check .",
+		"lint:fix": "biome check --apply .",
+		"prepublishOnly": "npm test && npm run build && npm run types",
+		"types": "node scripts/generate-dts.js"
+	},
+	"dependencies": {
+		"fastify-plugin": "^4.5.1",
+		"fastq": "^1.13.0",
+		"ipaddr.js": "^2.0.1",
+		"nanoerror": "^2.0.0",
+		"streamx": "^2.12.5",
+		"tempy": "^1.0.1",
+		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.42.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.7.3",
+		"@fastify/static": "^7.0.3",
+		"@types/events": "^3.0.2",
+		"@types/node": "^20.8.10",
+		"@types/streamx": "^2.9.3",
+		"execa": "^8.0.1",
+		"fastify": "^4.24.3",
+		"require-inject": "^1.4.4",
+		"simple-get": "^4.0.1",
+		"tap": "^16.3.0",
+		"tsup": "^7.2.0",
+		"typescript": "^5.2.2",
+		"uvu": "^0.5.3",
+		"ws": "^8.9.0"
+	},
+	"standard": {
+		"env": ["node", "browser"],
+		"ignore": ["tests/fastify/**"]
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/geut/fastify-uws.git"
+	},
+	"keywords": ["fastify", "uWebSockets.js", "fastify-plugin"],
+	"author": {
+		"name": "GEUT",
+		"email": "contact@geutstudio.com"
+	},
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/geut/fastify-uws/issues"
+	},
+	"homepage": "https://github.com/geut/fastify-uws#readme",
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=18"
+	}
 }
