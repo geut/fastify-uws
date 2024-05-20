@@ -15,15 +15,13 @@ test('writable drain', async () => {
 		res.end()
 	})
 
-	await new Promise((resolve) =>
-		server.listen({ host: 'localhost' }, resolve),
+	await new Promise((resolve) => server.listen({ host: 'localhost' }, resolve))
+
+	const res = await fetch(`http://localhost:${server.address().port}`).then(
+		(res) => res.arrayBuffer(),
 	)
 
-	const res = await fetch(`http://localhost:${server.address().port}`).then((res) =>
-		res.arrayBuffer(),
-	)
-
-  const buf = Buffer.concat(chunks)
+	const buf = Buffer.concat(chunks)
 
 	assert.equal(res.byteLength, buf.length)
 	assert.equal(Buffer.from(res), buf)

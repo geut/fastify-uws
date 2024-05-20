@@ -57,7 +57,6 @@ test('fastify integration tests', async () => {
 	// 		'shutsdown while keep-alive connections are active (non-async, custom)',
 	// 	],
 	// })
-
 	// console.log(results)
 })
 

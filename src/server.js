@@ -182,8 +182,9 @@ export class Server extends EventEmitter {
 			const request = new Request(req, socket, method)
 			const response = new Response(socket)
 			if (request.headers.upgrade) {
-        // TODO: if cannot upgrade should return
-				// this.emit('upgrade', request, socket)
+				if (this[kWs]) return
+				this.emit('upgrade', request, socket)
+				return
 			}
 			this[kHandler](request, response)
 		}

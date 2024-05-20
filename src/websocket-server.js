@@ -310,9 +310,9 @@ export class WebSocketServer extends EventEmitter {
 
 		app.ws('/*', {
 			upgrade: async (res, req, context) => {
-        const method = req.getMethod().toUpperCase()
+				const method = req.getMethod().toUpperCase()
 				const socket = new HTTPSocket(
-          server,
+					server,
 					res,
 					method === 'GET' || method === 'HEAD',
 				)
