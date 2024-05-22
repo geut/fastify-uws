@@ -9,96 +9,96 @@ import * as assert from 'uvu/assert'
 import { serverFactory } from '../src/server.js'
 
 test('upgrade to both servers', async () => {
-	const results = await lookup('localhost', { all: true })
-	if (results.length !== 2) {
-		throw new Error('should test both servers')
-	}
+  const results = await lookup('localhost', { all: true })
+  if (results.length !== 2) {
+    throw new Error('should test both servers')
+  }
 
-	const app = Fastify({
-		serverFactory,
-	})
+  const app = Fastify({
+    serverFactory,
+  })
 
-	app.get('/', () => ({}))
+  app.get('/', () => ({}))
 
-	await app.listen()
+  await app.listen()
 
-	{
-		const client = connect(app.server.address().port, '127.0.0.1')
-		const done = Promise.all([
-			once(client, 'close'),
-			once(app.server, 'upgrade').then(([_req, socket, _head]) => {
-				assert.ok(`upgrade event ${JSON.stringify(socket.address())}`)
-				socket.end()
-			}),
-		])
-		client.write('GET / HTTP/1.1\r\n')
-		client.write('Upgrade: websocket\r\n')
-		client.write('Connection: Upgrade\r\n')
-		client.write('Host: localhost\r\n')
-		client.write('Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n')
-		client.write('Sec-WebSocket-Protocol: com.xxx.service.v1\r\n')
-		client.write('Sec-WebSocket-Version: 13\r\n\r\n')
-		client.write('\r\n\r\n')
-		await done
-	}
+  {
+    const client = connect(app.server.address().port, '127.0.0.1')
+    const done = Promise.all([
+      once(client, 'close'),
+      once(app.server, 'upgrade').then(([_req, socket, _head]) => {
+        assert.ok(`upgrade event ${JSON.stringify(socket.address())}`)
+        socket.end()
+      }),
+    ])
+    client.write('GET / HTTP/1.1\r\n')
+    client.write('Upgrade: websocket\r\n')
+    client.write('Connection: Upgrade\r\n')
+    client.write('Host: localhost\r\n')
+    client.write('Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n')
+    client.write('Sec-WebSocket-Protocol: com.xxx.service.v1\r\n')
+    client.write('Sec-WebSocket-Version: 13\r\n\r\n')
+    client.write('\r\n\r\n')
+    await done
+  }
 
-	{
-		const client = connect(app.server.address().port, '::1')
-		const done = Promise.all([
-			once(client, 'close'),
-			once(app.server, 'upgrade').then(([_req, socket, _head]) => {
-				assert.ok(`upgrade event ${JSON.stringify(socket.address())}`)
-				socket.end()
-			}),
-		])
-		client.write('GET / HTTP/1.1\r\n')
-		client.write('Upgrade: websocket\r\n')
-		client.write('Connection: Upgrade\r\n')
-		client.write('Host: localhost\r\n')
-		client.write('Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n')
-		client.write('Sec-WebSocket-Protocol: com.xxx.service.v1\r\n')
-		client.write('Sec-WebSocket-Version: 13\r\n\r\n')
-		await done
-	}
+  {
+    const client = connect(app.server.address().port, '::1')
+    const done = Promise.all([
+      once(client, 'close'),
+      once(app.server, 'upgrade').then(([_req, socket, _head]) => {
+        assert.ok(`upgrade event ${JSON.stringify(socket.address())}`)
+        socket.end()
+      }),
+    ])
+    client.write('GET / HTTP/1.1\r\n')
+    client.write('Upgrade: websocket\r\n')
+    client.write('Connection: Upgrade\r\n')
+    client.write('Host: localhost\r\n')
+    client.write('Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n')
+    client.write('Sec-WebSocket-Protocol: com.xxx.service.v1\r\n')
+    client.write('Sec-WebSocket-Version: 13\r\n\r\n')
+    await done
+  }
 
-	await app.close()
+  await app.close()
 })
 
 test('upgrade to both servers 2', async () => {
-	const results = await lookup('localhost', { all: true })
-	if (results.length !== 2) {
-		throw new Error('should test both servers')
-	}
+  const results = await lookup('localhost', { all: true })
+  if (results.length !== 2) {
+    throw new Error('should test both servers')
+  }
 
-	const app = Fastify()
+  const app = Fastify()
 
-	app.get('/', () => {
-		console.log('entra')
-		return {}
-	})
+  app.get('/', () => {
+    console.log('entra')
+    return {}
+  })
 
-	await app.listen()
+  await app.listen()
 
-	{
-		const client = connect(app.server.address().port, '127.0.0.1')
-		const done = Promise.all([
-			once(client, 'close'),
-			once(app.server, 'upgrade').then(([_req, socket, _head]) => {
-				assert.ok(`upgrade event ${JSON.stringify(socket.address())}`)
-				socket.end()
-			}),
-		])
-		client.write('GET / HTTP/1.1\r\n')
-		client.write('Upgrade: websocket\r\n')
-		client.write('Connection: Upgrade\r\n')
-		client.write('Host: localhost\r\n')
-		client.write('Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n')
-		client.write('Sec-WebSocket-Protocol: com.xxx.service.v1\r\n')
-		client.write('Sec-WebSocket-Version: 13\r\n\r\n')
-		client.write('\r\n\r\n')
-		await done
-	}
+  {
+    const client = connect(app.server.address().port, '127.0.0.1')
+    const done = Promise.all([
+      once(client, 'close'),
+      once(app.server, 'upgrade').then(([_req, socket, _head]) => {
+        assert.ok(`upgrade event ${JSON.stringify(socket.address())}`)
+        socket.end()
+      }),
+    ])
+    client.write('GET / HTTP/1.1\r\n')
+    client.write('Upgrade: websocket\r\n')
+    client.write('Connection: Upgrade\r\n')
+    client.write('Host: localhost\r\n')
+    client.write('Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n')
+    client.write('Sec-WebSocket-Protocol: com.xxx.service.v1\r\n')
+    client.write('Sec-WebSocket-Version: 13\r\n\r\n')
+    client.write('\r\n\r\n')
+    await done
+  }
 
-	await app.close()
+  await app.close()
 })
 test.run()

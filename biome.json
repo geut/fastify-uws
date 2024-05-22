@@ -86,6 +86,7 @@
 		"globals": ["document", "navigator", "window"],
 		"formatter": {
 			"bracketSpacing": true,
+			"indentStyle": "space",
 			"quoteStyle": "single",
 			"semicolons": "asNeeded"
 		}
