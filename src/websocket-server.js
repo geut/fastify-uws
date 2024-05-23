@@ -59,18 +59,12 @@ import { Duplex } from 'streamx'
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
 import { Response } from './response.js'
-import {
-  kApp,
-  kWs,
-  kHandler,
-  kTopic,
-  kEnded
-} from './symbols.js'
+import { kApp, kEnded, kHandler, kTopic, kWs } from './symbols.js'
 
 const defaultWebSocketConfig = {
   compression: uws.SHARED_COMPRESSOR,
   maxPayloadLength: 16 * 1024 * 1024,
-  idleTimeout: 16
+  idleTimeout: 16,
 }
 
 const SEP = '!'
@@ -82,20 +76,20 @@ export class WebSocket extends EventEmitter {
    * @param {Buffer | string} topic
    * @returns {Buffer}
    */
-  static allocTopic (namespace, topic) {
-    if (topic[kTopic]) return /** @type {Buffer} */(topic)
+  static allocTopic(namespace, topic) {
+    if (topic[kTopic]) return /** @type {Buffer} */ (topic)
 
     const buf = Buffer.concat([
       namespace,
       SEP_BUFFER,
-      Buffer.isBuffer(topic) ? topic : Buffer.from(topic)
+      Buffer.isBuffer(topic) ? topic : Buffer.from(topic),
     ])
 
     buf[kTopic] = true
     return buf
   }
 
-  constructor (namespace, connection, topics = {}) {
+  constructor(namespace, connection, topics = {}) {
     super()
 
     /** @type {Buffer} */
@@ -107,7 +101,7 @@ export class WebSocket extends EventEmitter {
     this[kEnded] = false
   }
 
-  get uws () {
+  get uws() {
     return true
   }
 
@@ -115,7 +109,7 @@ export class WebSocket extends EventEmitter {
    * @param {Buffer | string} topic
    * @returns {Buffer}
    */
-  allocTopic (topic) {
+  allocTopic(topic) {
     if (this.topics[topic]) return this.topics[topic]
     return WebSocket.allocTopic(this.namespace, topic)
   }
@@ -125,7 +119,7 @@ export class WebSocket extends EventEmitter {
    * @param {boolean} [isBinary]
    * @param {boolean} [compress]
    */
-  send (message, isBinary, compress) {
+  send(message, isBinary, compress) {
     if (this[kEnded]) return
     return this.connection.send(message, isBinary, compress)
   }
@@ -136,15 +130,20 @@ export class WebSocket extends EventEmitter {
    * @param {boolean} [isBinary]
    * @param {boolean} [compress]
    */
-  publish (topic, message, isBinary, compress) {
+  publish(topic, message, isBinary, compress) {
     if (this[kEnded]) return
-    return this.connection.publish(this.allocTopic(topic), message, isBinary, compress)
+    return this.connection.publish(
+      this.allocTopic(topic),
+      message,
+      isBinary,
+      compress,
+    )
   }
 
   /**
    * @param {Buffer | string} topic
    */
-  subscribe (topic) {
+  subscribe(topic) {
     if (this[kEnded]) return
     return this.connection.subscribe(this.allocTopic(topic))
   }
@@ -152,7 +151,7 @@ export class WebSocket extends EventEmitter {
   /**
    * @param {Buffer | string} topic
    */
-  unsubscribe (topic) {
+  unsubscribe(topic) {
     if (this[kEnded]) return
     return this.connection.unsubscribe(this.allocTopic(topic))
   }
@@ -160,17 +159,19 @@ export class WebSocket extends EventEmitter {
   /**
    * @param {Buffer | string} topic
    */
-  isSubscribed (topic) {
+  isSubscribed(topic) {
     if (this[kEnded]) return false
     return this.connection.isSubscribed(this.allocTopic(topic))
   }
 
-  getTopics () {
+  getTopics() {
     if (this[kEnded]) return []
-    return this.connection.getTopics().map(topic => topic.slice(topic.indexOf(SEP) + 1))
+    return this.connection
+      .getTopics()
+      .map((topic) => topic.slice(topic.indexOf(SEP) + 1))
   }
 
-  close () {
+  close() {
     if (this[kEnded]) return
     this[kEnded] = true
     return this.connection.close()
@@ -180,7 +181,7 @@ export class WebSocket extends EventEmitter {
    * @param {number} [code]
    * @param {RecognizedString} [shortMessage]
    */
-  end (code, shortMessage) {
+  end(code, shortMessage) {
     if (this[kEnded]) return
     this[kEnded] = true
     return this.connection.end(code, shortMessage)
@@ -189,12 +190,12 @@ export class WebSocket extends EventEmitter {
   /**
    * @param {() => void} cb
    */
-  cork (cb) {
+  cork(cb) {
     if (this[kEnded]) return
     return this.connection.cork(cb)
   }
 
-  getBufferedAmount () {
+  getBufferedAmount() {
     if (this[kEnded]) return 0
     return this.connection.getBufferedAmount()
   }
@@ -202,7 +203,7 @@ export class WebSocket extends EventEmitter {
   /**
    * @param {RecognizedString} message
    */
-  ping (message) {
+  ping(message) {
     if (this[kEnded]) return
     return this.connection.ping(message)
   }
@@ -212,7 +213,7 @@ export class WebSocket extends EventEmitter {
    * @param {T} eventName
    * @param {WebsocketEvent[T]} listener
    */
-  on (eventName, listener) {
+  on(eventName, listener) {
     return super.on(eventName, listener)
   }
 
@@ -221,7 +222,7 @@ export class WebSocket extends EventEmitter {
    * @param {T} eventName
    * @param {WebsocketEvent[T]} listener
    */
-  once (eventName, listener) {
+  once(eventName, listener) {
     return super.once(eventName, listener)
   }
 }
@@ -239,7 +240,7 @@ export class WebSocketStream extends Duplex {
    *  byteLengthWritable?: (packet: { data: any, isBinary: boolean, compress: boolean }) => number | 1024 // optional function that calculates the byte size of input data
    * }} opts
    */
-  constructor (socket, opts = {}) {
+  constructor(socket, opts = {}) {
     const { compress = false } = opts
 
     super({
@@ -259,7 +260,7 @@ export class WebSocketStream extends Duplex {
       byteLengthWritable: (packet) => {
         if (opts.byteLengthWritable) return opts.byteLengthWritable(packet)
         return packet.isBinary ? packet.data.byteLength : 1024
-      }
+      },
     })
 
     /** @type {WebSocket} */
@@ -267,22 +268,22 @@ export class WebSocketStream extends Duplex {
     this._onMessage = this._onMessage.bind(this)
   }
 
-  _open (cb) {
+  _open(cb) {
     this.socket.on('message', this._onMessage)
     cb()
   }
 
-  _close (cb) {
+  _close(cb) {
     this.socket.off('message', this._onMessage)
     this.socket.close()
     cb()
   }
 
-  _onMessage (data, isBinary) {
+  _onMessage(data, isBinary) {
     this.push({ data, isBinary })
   }
 
-  _write (packet, cb) {
+  _write(packet, cb) {
     this.socket.send(packet.data, packet.isBinary, packet.compress)
     cb()
   }
@@ -292,7 +293,7 @@ export class WebSocketServer extends EventEmitter {
   /**
    * @param {WSOptions} options
    */
-  constructor (options = {}) {
+  constructor(options = {}) {
     super()
     this.options = { ...options, ...defaultWebSocketConfig }
     this.connections = new Set()
@@ -301,7 +302,7 @@ export class WebSocketServer extends EventEmitter {
   /**
    * @param {import('./server.js').Server} server
    */
-  addServer (server) {
+  addServer(server) {
     const { options } = this
     /** @type {TemplatedApp} */
     const app = server[kApp]
@@ -310,7 +311,11 @@ export class WebSocketServer extends EventEmitter {
     app.ws('/*', {
       upgrade: async (res, req, context) => {
         const method = req.getMethod().toUpperCase()
-        const socket = new HTTPSocket(server, res, method === 'GET' || method === 'HEAD')
+        const socket = new HTTPSocket(
+          server,
+          res,
+          method === 'GET' || method === 'HEAD',
+        )
         const request = new Request(req, socket, method)
         const response = new Response(socket)
         request[kWs] = context
@@ -320,7 +325,7 @@ export class WebSocketServer extends EventEmitter {
       /**
        * @param {UWSocket} ws
        */
-      open: ws => {
+      open: (ws) => {
         this.connections.add(ws)
         // @ts-ignore
         ws.handler(ws)
@@ -371,7 +376,7 @@ export class WebSocketServer extends EventEmitter {
         ws.websocket.emit('pong', message)
         this.emit('pong', ws, message)
       },
-      ...options
+      ...options,
     })
   }
 
@@ -380,7 +385,7 @@ export class WebSocketServer extends EventEmitter {
    * @param {T} eventName
    * @param {WebsocketServerEvent[T]} listener
    */
-  on (eventName, listener) {
+  on(eventName, listener) {
     return super.on(eventName, listener)
   }
 
@@ -389,7 +394,7 @@ export class WebSocketServer extends EventEmitter {
    * @param {T} eventName
    * @param {WebsocketServerEvent[T]} listener
    */
-  once (eventName, listener) {
+  once(eventName, listener) {
     return super.once(eventName, listener)
   }
 }

@@ -40,7 +40,7 @@ test('fastify integration tests', async () => {
       'stream',
       'https/https',
       'url-rewriting',
-      'trust-proxy'
+      'trust-proxy',
     ],
     ignore: [
       'framework-unsupported method',
@@ -54,10 +54,9 @@ test('fastify integration tests', async () => {
       'Current opened connection should NOT continue to work after closing and return "connection: close" header - return503OnClosing: false, skip Node < v19.x',
       'shutsdown while keep-alive connections are active (non-async, native)',
       'shutsdown while keep-alive connections are active (non-async, idle, native)',
-      'shutsdown while keep-alive connections are active (non-async, custom)'
-    ]
+      'shutsdown while keep-alive connections are active (non-async, custom)',
+    ],
   })
-
   console.log(results)
 })
 

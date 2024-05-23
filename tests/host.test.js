@@ -1,6 +1,6 @@
+import fastify from 'fastify'
 import { test } from 'uvu'
 import * as assert from 'uvu/assert'
-import fastify from 'fastify'
 
 import { serverFactory } from '../src/server.js'
 

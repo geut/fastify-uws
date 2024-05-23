@@ -1,14 +1,15 @@
 import { Readable } from 'streamx'
 
-import { kReq, kHeaders, kUrl } from './symbols.js'
+import { kHeaders, kReq, kUrl } from './symbols.js'
 
+// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
-function onAbort () {
+function onAbort() {
   this.emit('aborted')
 }
 export class Request extends Readable {
-  constructor (req, socket, method) {
+  constructor(req, socket, method) {
     super()
 
     this.socket = socket
@@ -26,23 +27,24 @@ export class Request extends Readable {
     socket.once('aborted', onAbort.bind(this))
   }
 
-  get aborted () {
+  get aborted() {
     return this.socket.aborted
   }
 
-  get url () {
+  get url() {
     let url = this[kUrl]
     if (url) return url
     const query = this[kReq].getQuery()
-    url = this[kUrl] = this[kReq].getUrl() + (query && query.length > 0 ? `?${query}` : '')
+    url = this[kUrl] =
+      this[kReq].getUrl() + (query && query.length > 0 ? `?${query}` : '')
     return url
   }
 
-  set url (url) {
+  set url(url) {
     this[kUrl] = url
   }
 
-  get headers () {
+  get headers() {
     let headers = this[kHeaders]
     if (headers) return headers
     headers = this[kHeaders] = {}
@@ -52,20 +54,20 @@ export class Request extends Readable {
     return headers
   }
 
-  setEncoding (encoding) {
+  setEncoding(encoding) {
     this.socket.setEncoding(encoding)
   }
 
-  setTimeout (timeout) {
+  setTimeout(timeout) {
     this.socket.setTimeout(timeout)
   }
 
-  destroy (err) {
+  destroy(err) {
     if (this.destroyed || this.destroying) return
     this.socket.destroy(err)
   }
 
-  _read (cb) {
+  _read(cb) {
     if (this.destroyed || this.destroying || this.socket.destroyed) return cb()
 
     this.socket.onRead((err, data) => {

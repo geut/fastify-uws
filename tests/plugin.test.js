@@ -1,18 +1,21 @@
 import { once } from 'events'
 
+import fastify from 'fastify'
+import sget from 'simple-get'
 import { test } from 'uvu'
 import * as assert from 'uvu/assert'
-import fastify from 'fastify'
 import WebSocket from 'ws'
-import sget from 'simple-get'
 
-import { serverFactory } from '../src/server.js'
 import fastifyUwsPlugin from '../src/plugin.js'
+import { serverFactory } from '../src/server.js'
 
-const get = (opts) => new Promise((resolve, reject) => sget.concat(opts, (err, _, data) => {
-  if (err) return reject(err)
-  resolve(data.toString())
-}))
+const get = (opts) =>
+  new Promise((resolve, reject) =>
+    sget.concat(opts, (err, _, data) => {
+      if (err) return reject(err)
+      resolve(data.toString())
+    }),
+  )
 
 test.after.each(async (context) => {
   if (context.app) await context.app.close()
@@ -21,10 +24,12 @@ test.after.each(async (context) => {
 test('basic websocket', async (context) => {
   let onGlobalMessage = 0
 
-  const app = context.app = fastify({
+  const app = fastify({
     logger: true,
-    serverFactory
+    serverFactory,
   })
+
+  context.app = app
 
   await app.register(fastifyUwsPlugin)
 
@@ -40,13 +45,15 @@ test('basic websocket', async (context) => {
       },
       uwsHandler: (conn) => {
         conn.subscribe('home/sensors/temp')
-        conn.on('message', (message) => conn.publish('home/sensors/temp', message))
+        conn.on('message', (message) =>
+          conn.publish('home/sensors/temp', message),
+        )
         conn.send(JSON.stringify(conn.getTopics()))
-      }
+      },
     })
     .listen({
       port: 3000,
-      host: '127.0.0.1'
+      host: '127.0.0.1',
     })
 
   const address = `${app.server.address().address}:${app.server.address().port}`
@@ -55,13 +62,19 @@ test('basic websocket', async (context) => {
   const clientB = new WebSocket(`ws://${address}`)
 
   await Promise.all([
-    once(clientA, 'message').then(([message]) => assert.is(message.toString(), JSON.stringify(['home/sensors/temp']))),
-    once(clientB, 'message').then(([message]) => assert.is(message.toString(), JSON.stringify(['home/sensors/temp']))),
-    once(app.websocketServer, 'open')
+    once(clientA, 'message').then(([message]) =>
+      assert.is(message.toString(), JSON.stringify(['home/sensors/temp'])),
+    ),
+    once(clientB, 'message').then(([message]) =>
+      assert.is(message.toString(), JSON.stringify(['home/sensors/temp'])),
+    ),
+    once(app.websocketServer, 'open'),
   ])
 
   clientA.send('message from A')
-  await once(clientB, 'message').then(([message]) => assert.is(message.toString(), 'message from A'))
+  await once(clientB, 'message').then(([message]) =>
+    assert.is(message.toString(), 'message from A'),
+  )
 
   assert.is(onGlobalMessage, 1)
 

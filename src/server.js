@@ -17,31 +17,39 @@
  * @typedef {import('fastify').FastifyServerFactory} FastifyServerFactory
  */
 
+import assert from 'assert'
 import EventEmitter from 'events'
 import { writeFileSync } from 'fs'
-import assert from 'assert'
 import dns from 'dns/promises'
 
-import uws from 'uWebSockets.js'
 import ipaddr from 'ipaddr.js'
 import tempy from 'tempy'
+import uws from 'uWebSockets.js'
 
-import { ERR_ADDRINUSE, ERR_UWS_APP_NOT_FOUND, ERR_ENOTFOUND, ERR_SOCKET_BAD_PORT } from './errors.js'
+import {
+  ERR_ADDRINUSE,
+  ERR_ENOTFOUND,
+  ERR_SOCKET_BAD_PORT,
+  ERR_UWS_APP_NOT_FOUND,
+} from './errors.js'
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
 import { Response } from './response.js'
 import {
-  kHttps,
-  kHandler,
   kAddress,
-  kListenSocket,
-  kListen,
   kApp,
   kClosed,
-  kWs
+  kHandler,
+  kHttps,
+  kListen,
+  kListenSocket,
+  kWs,
 } from './symbols.js'
 
-function createApp (https) {
+// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
+const noop = () => {}
+
+function createApp(https) {
   if (!https) return uws.App()
   if (!https.key) return uws.SSLApp(https)
   const keyFile = tempy.file()
@@ -51,7 +59,7 @@ function createApp (https) {
   return uws.SSLApp({
     key_file_name: keyFile,
     cert_file_name: certFile,
-    passphrase: https.passphrase
+    passphrase: https.passphrase,
   })
 }
 
@@ -62,12 +70,15 @@ export class Server extends EventEmitter {
    * @param {(req: Request, res: Response) => void} handler
    * @param {ServerOptions} opts
    */
-  constructor (handler, opts = {}) {
+  constructor(handler, opts = {}) {
     super()
 
     const { connectionTimeout = 0, https = false } = opts
 
-    assert(!https || typeof https === 'object', 'https must be a valid object { key: string, cert: string } or follow the uws.AppOptions')
+    assert(
+      !https || typeof https === 'object',
+      'https must be a valid object { key: string, cert: string } or follow the uws.AppOptions',
+    )
 
     this[kHandler] = handler
     this.timeout = connectionTimeout
@@ -81,21 +92,21 @@ export class Server extends EventEmitter {
   }
 
   /** @type {boolean} */
-  get encrypted () {
+  get encrypted() {
     return !!this[kHttps]
   }
 
   /**
    * @param {number} timeout
    */
-  setTimeout (timeout) {
+  setTimeout(timeout) {
     this.timeout = timeout
   }
 
   /**
    * @returns {{ address: string, port: number }}
    */
-  address () {
+  address() {
     return this[kAddress]
   }
 
@@ -104,10 +115,10 @@ export class Server extends EventEmitter {
    * @param {{ host: string, port: number }} listenOptions
    * @param {() => void} cb
    */
-  listen (listenOptions, cb) {
+  listen(listenOptions, cb) {
     this[kListen](listenOptions)
       .then(() => cb && cb())
-      .catch(err => {
+      .catch((err) => {
         this[kAddress] = null
         process.nextTick(() => this.emit('error', err))
       })
@@ -116,7 +127,7 @@ export class Server extends EventEmitter {
   /**
    * @param {() => void} [cb]
    */
-  close (cb = () => {}) {
+  close(cb = noop) {
     if (this[kClosed]) return cb()
     const port = this[kAddress]?.port
     if (port !== undefined && mainServer[port] === this) {
@@ -129,7 +140,7 @@ export class Server extends EventEmitter {
       this[kListenSocket] = null
     }
     if (this[kWs]) {
-      this[kWs].connections.forEach(conn => conn.close())
+      this[kWs].connections.forEach((conn) => conn.close())
     }
     setTimeout(() => {
       this.emit('close')
@@ -137,36 +148,43 @@ export class Server extends EventEmitter {
     }, 1)
   }
 
-  ref () {}
-  unref () {}
+  ref = noop
+  unref = noop
 
-  async [kListen] ({ port, host }) {
+  async [kListen]({ port, host }) {
     if (port !== undefined && port !== null && Number.isNaN(Number(port))) {
       throw new ERR_SOCKET_BAD_PORT(port)
     }
 
-    port = (port === undefined || port === null) ? 0 : Number(port)
+    port = port === undefined || port === null ? 0 : Number(port)
 
     const lookupAddress = await dns.lookup(host)
 
     this[kAddress] = {
       ...lookupAddress,
-      port
+      port,
     }
 
-    if (this[kAddress].address.startsWith('[')) throw new ERR_ENOTFOUND(this[kAddress].address)
+    if (this[kAddress].address.startsWith('['))
+      throw new ERR_ENOTFOUND(this[kAddress].address)
 
     const parsedAddress = ipaddr.parse(this[kAddress].address)
     const longAddress = parsedAddress.toNormalizedString()
 
     const app = this[kApp]
 
-    const onRequest = method => (res, req) => {
-      const socket = new HTTPSocket(this, res, method === 'GET' || method === 'HEAD')
+    const onRequest = (method) => (res, req) => {
+      const socket = new HTTPSocket(
+        this,
+        res,
+        method === 'GET' || method === 'HEAD',
+      )
       const request = new Request(req, socket, method)
       const response = new Response(socket)
       if (request.headers.upgrade) {
+        if (this[kWs]) return
         this.emit('upgrade', request, socket)
+        return
       }
       this[kHandler](request, response)
     }
@@ -192,7 +210,8 @@ export class Server extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       app.listen(longAddress, port, (listenSocket) => {
-        if (!listenSocket) return reject(new ERR_ADDRINUSE(this[kAddress].address, port))
+        if (!listenSocket)
+          return reject(new ERR_ADDRINUSE(this[kAddress].address, port))
         this[kListenSocket] = listenSocket
         port = this[kAddress].port = uws.us_socket_local_port(listenSocket)
         if (!mainServer[port]) {
@@ -243,5 +262,5 @@ export {
   DEDICATED_DECOMPRESSOR_8KB,
   DISABLED,
   SHARED_COMPRESSOR,
-  SHARED_DECOMPRESSOR
+  SHARED_DECOMPRESSOR,
 } from 'uWebSockets.js'

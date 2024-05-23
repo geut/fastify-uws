@@ -2,76 +2,55 @@ import EventEmitter from 'events'
 import fastq from 'fastq'
 
 import {
-  kRes,
-  kHttps,
-  kServer,
   kAddress,
-  kRemoteAdress,
   kEncoding,
-  kTimeoutRef,
+  kHead,
+  kHttps,
+  kQueue,
   kReadyState,
+  kRemoteAdress,
+  kRes,
+  kServer,
+  kTimeoutRef,
+  kUwsRemoteAddress,
   kWriteOnly,
   kWs,
-  kUwsRemoteAddress,
-  kQueue,
-  kHead
 } from './symbols.js'
 
 import { ERR_STREAM_DESTROYED } from './errors.js'
 
-const localAddressIpv6 = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+const localAddressIpv6 = Buffer.from([
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+])
 
 const toHex = (buf, start, end) => buf.slice(start, end).toString('hex')
 
+// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 /**
  * @this {HTTPSocket}
  */
-function onAbort () {
+function onAbort() {
   this.aborted = true
   this.emit('aborted')
   this.errored && this.emit('error', this.errored)
   this.emit('close')
 }
 
-function onDrain () {
-  this.emit('drain')
+function onDrain(offset) {
+  this.emit('drain', offset)
   return true
 }
 
-function onTimeout () {
+function onTimeout() {
   if (!this.destroyed) {
     this.emit('timeout')
     this.abort()
   }
 }
 
-/**
- * @this {HTTPSocket}
- */
-function onWrite (data, cb) {
-  const res = this[kRes]
-
-  this[kReadyState].write = true
-
-  res.cork(() => {
-    if (this[kHead]) {
-      writeHead(res, this[kHead])
-      this[kHead] = null
-    }
-
-    const drained = res.write(getChunk(data))
-    if (drained) {
-      this.bytesWritten += byteLength(data)
-      return cb()
-    }
-
-    drain(this, res, data, cb)
-  })
-}
-
-function end (socket, data) {
+function end(socket, data) {
   socket._clearTimeout()
 
   const res = socket[kRes]
@@ -88,7 +67,7 @@ function end (socket, data) {
   })
 }
 
-function drain (socket, res, data, cb) {
+function drain(socket, cb) {
   socket.writableNeedDrain = true
   let done = false
 
@@ -102,24 +81,17 @@ function drain (socket, res, data, cb) {
 
   const onDrain = () => {
     if (done) return
-
-    res.cork(() => {
-      done = res.write(getChunk(data))
-      if (done) {
-        socket.writableNeedDrain = false
-        socket.bytesWritten += byteLength(data)
-        socket.removeListener('close', onClose)
-        socket.removeListener('drain', onDrain)
-        cb()
-      }
-    })
+    socket.writableNeedDrain = false
+    socket.removeListener('close', onClose)
+    socket.removeListener('drain', onDrain)
+    cb()
   }
 
   socket.on('drain', onDrain)
   socket.once('close', onClose)
 }
 
-function writeHead (res, head) {
+function writeHead(res, head) {
   if (head.status) res.writeStatus(head.status)
   if (head.headers) {
     for (const header of head.headers.values()) {
@@ -128,18 +100,19 @@ function writeHead (res, head) {
   }
 }
 
-function byteLength (data) {
-  if (data.byteLength !== undefined) return data.byteLength
+function byteLength(data) {
+  if (data?.empty) return 0
+  if (data?.byteLength !== undefined) return data.byteLength
   return Buffer.byteLength(data)
 }
 
-function getChunk (data) {
-  if (data.chunk) return data.chunk
+function getChunk(data) {
+  if (data?.chunk) return data.chunk
   return data
 }
 
 export class HTTPSocket extends EventEmitter {
-  constructor (server, res, writeOnly) {
+  constructor(server, res, writeOnly) {
     super()
 
     this.aborted = false
@@ -153,7 +126,7 @@ export class HTTPSocket extends EventEmitter {
     this[kWriteOnly] = writeOnly
     this[kReadyState] = {
       read: false,
-      write: false
+      write: false,
     }
     this[kEncoding] = null
     this[kRemoteAdress] = null
@@ -169,7 +142,7 @@ export class HTTPSocket extends EventEmitter {
     }
   }
 
-  get readyState () {
+  get readyState() {
     const state = this[kReadyState]
     if (state.read && !state.write) return 'readOnly'
     if (!state.read && state.write) return 'writeOnly'
@@ -177,19 +150,19 @@ export class HTTPSocket extends EventEmitter {
     return 'opening'
   }
 
-  get writable () {
+  get writable() {
     return true
   }
 
-  get readable () {
+  get readable() {
     return true
   }
 
-  get encrypted () {
+  get encrypted() {
     return !!this[kServer][kHttps]
   }
 
-  get remoteAddress () {
+  get remoteAddress() {
     let remoteAddress = this[kRemoteAdress]
     if (remoteAddress) return remoteAddress
 
@@ -199,13 +172,23 @@ export class HTTPSocket extends EventEmitter {
     }
 
     if (buf.length === 4) {
-      remoteAddress = `${buf.readUInt8(0)}.${buf.readUInt8(1)}.${buf.readUInt8(2)}.${buf.readUInt8(3)}`
+      remoteAddress = `${buf.readUInt8(0)}.${buf.readUInt8(1)}.${buf.readUInt8(
+        2,
+      )}.${buf.readUInt8(3)}`
     } else {
       // avoid to call toHex if local
       if (buf.equals(localAddressIpv6)) {
         remoteAddress = '::1'
       } else {
-        remoteAddress = `${toHex(buf, 0, 2)}:${toHex(buf, 2, 4)}:${toHex(buf, 4, 6)}:${toHex(buf, 6, 8)}:${toHex(buf, 8, 10)}:${toHex(buf, 10, 12)}:${toHex(buf, 12, 14)}:${toHex(buf, 14)}`
+        remoteAddress = `${toHex(buf, 0, 2)}:${toHex(buf, 2, 4)}:${toHex(
+          buf,
+          4,
+          6,
+        )}:${toHex(buf, 6, 8)}:${toHex(buf, 8, 10)}:${toHex(
+          buf,
+          10,
+          12,
+        )}:${toHex(buf, 12, 14)}:${toHex(buf, 14)}`
       }
     }
 
@@ -213,7 +196,7 @@ export class HTTPSocket extends EventEmitter {
     return remoteAddress
   }
 
-  get remoteFamily () {
+  get remoteFamily() {
     if (!this[kUwsRemoteAddress]) {
       this[kUwsRemoteAddress] = Buffer.from(this[kRes].getRemoteAddress())
     }
@@ -221,15 +204,15 @@ export class HTTPSocket extends EventEmitter {
     return this[kUwsRemoteAddress].length === 4 ? 'IPv4' : 'IPv6'
   }
 
-  get destroyed () {
+  get destroyed() {
     return this.writableEnded || this.aborted
   }
 
-  address () {
+  address() {
     return { ...this[kServer][kAddress] }
   }
 
-  abort () {
+  abort() {
     if (this.aborted) return
     this.aborted = true
     this[kQueue] && this[kQueue].kill()
@@ -238,18 +221,18 @@ export class HTTPSocket extends EventEmitter {
     }
   }
 
-  setEncoding (encoding) {
+  setEncoding(encoding) {
     this[kEncoding] = encoding
   }
 
-  destroy (err) {
+  destroy(err) {
     if (this.aborted) return
     this._clearTimeout()
     this.errored = err
     this.abort()
   }
 
-  onRead (cb) {
+  onRead(cb) {
     if (this[kWriteOnly] || this.aborted) return cb(null, null)
 
     let done = false
@@ -282,7 +265,7 @@ export class HTTPSocket extends EventEmitter {
     }
   }
 
-  end (data, _, cb = noop) {
+  end(data, _, cb = noop) {
     if (this.aborted) throw new ERR_STREAM_DESTROYED()
 
     if (!data) return this.abort()
@@ -300,18 +283,37 @@ export class HTTPSocket extends EventEmitter {
     queue.push(data, cb)
   }
 
-  write (data, _, cb = noop) {
+  write(data, _, cb = noop) {
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
 
     if (!this[kQueue]) {
-      this[kQueue] = fastq(this, onWrite, 1)
+      this[kQueue] = fastq(this, this._onWrite, 1)
     }
 
     this[kQueue].push(data, cb)
     return !this.writableNeedDrain
   }
 
-  _clearTimeout () {
+  _clearTimeout() {
     this[kTimeoutRef] && clearTimeout(this[kTimeoutRef])
+  }
+
+  _onWrite(data, cb) {
+    const res = this[kRes]
+
+    this[kReadyState].write = true
+
+    res.cork(() => {
+      if (this[kHead]) {
+        writeHead(res, this[kHead])
+        this[kHead] = null
+      }
+
+      const drained = res.write(getChunk(data))
+      this.bytesWritten += byteLength(data)
+
+      if (drained) return cb()
+      drain(this, cb)
+    })
   }
 }

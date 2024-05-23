@@ -3,10 +3,10 @@ import { STATUS_CODES } from 'http'
 import { Writable } from 'streamx'
 
 import { ERR_HEAD_SET, ERR_STREAM_DESTROYED } from './errors.js'
-import { kHeaders, kHead } from './symbols.js'
+import { kHead, kHeaders } from './symbols.js'
 
 class Header {
-  constructor (name, value) {
+  constructor(name, value) {
     this.name = name
     this.value = String(value)
   }
@@ -14,7 +14,7 @@ class Header {
 
 const EMPTY = Buffer.alloc(0)
 class HTTPResponse {
-  constructor (chunk, end = false) {
+  constructor(chunk, end = false) {
     this.chunk = chunk || EMPTY
     this.empty = !chunk
     this.end = end
@@ -22,20 +22,21 @@ class HTTPResponse {
   }
 }
 
-function onAbort () {
+function onAbort() {
   this.emit('aborted')
 }
 
+// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 const options = {
-  byteLength (data) {
+  byteLength(data) {
     return data.byteLength
-  }
+  },
 }
 
 export class Response extends Writable {
-  constructor (socket) {
+  constructor(socket) {
     super(options)
 
     this.socket = socket
@@ -55,31 +56,33 @@ export class Response extends Writable {
     socket.once('aborted', onAbort.bind(this))
   }
 
-  get aborted () {
+  get aborted() {
     return this.socket.aborted
   }
 
-  get finished () {
+  get finished() {
     return this.socket.writableEnded && !this.socket.aborted
   }
 
-  get status () {
-    return `${this.statusCode} ${this.statusMessage || STATUS_CODES[this.statusCode]}`
+  get status() {
+    return `${this.statusCode} ${
+      this.statusMessage || STATUS_CODES[this.statusCode]
+    }`
   }
 
-  get bytesWritten () {
+  get bytesWritten() {
     return this.socket.bytesWritten
   }
 
-  hasHeader (name) {
+  hasHeader(name) {
     return this[kHeaders].has(name.toLowerCase())
   }
 
-  getHeader (name) {
+  getHeader(name) {
     return this[kHeaders].get(name.toLowerCase())?.value
   }
 
-  getHeaders () {
+  getHeaders() {
     const headers = {}
     this[kHeaders].forEach((header, key) => {
       headers[key] = header.value
@@ -87,7 +90,7 @@ export class Response extends Writable {
     return headers
   }
 
-  setHeader (name, value) {
+  setHeader(name, value) {
     if (this.headersSent) throw new ERR_HEAD_SET()
 
     const key = name.toLowerCase()
@@ -105,13 +108,13 @@ export class Response extends Writable {
     this[kHeaders].set(key, new Header(name, value))
   }
 
-  removeHeader (name) {
+  removeHeader(name) {
     if (this.headersSent) throw new ERR_HEAD_SET()
 
     this[kHeaders].delete(name.toLowerCase())
   }
 
-  writeHead (statusCode, statusMessage, headers) {
+  writeHead(statusCode, statusMessage, headers) {
     if (this.headersSent) throw new ERR_HEAD_SET()
 
     this.statusCode = statusCode
@@ -123,25 +126,25 @@ export class Response extends Writable {
     }
 
     if (headers) {
-      Object.keys(headers).forEach(key => {
+      Object.keys(headers).forEach((key) => {
         this.setHeader(key, headers[key])
       })
     }
   }
 
-  end (data) {
+  end(data) {
     if (this.aborted) return
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
     this.writableEnded = true
     return super.end(new HTTPResponse(data, true))
   }
 
-  destroy (err) {
+  destroy(err) {
     if (this.destroyed || this.destroying || this.aborted) return
     this.socket.destroy(err)
   }
 
-  write (data) {
+  write(data) {
     if (this.aborted) return
 
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
@@ -149,7 +152,11 @@ export class Response extends Writable {
     data = new HTTPResponse(data)
 
     // fast end
-    if (this.firstChunk && this.contentLength !== null && this.contentLength === data.byteLength) {
+    if (
+      this.firstChunk &&
+      this.contentLength !== null &&
+      this.contentLength === data.byteLength
+    ) {
       data.end = true
       this.writableEnded = true
       super.end(data)
@@ -160,14 +167,14 @@ export class Response extends Writable {
     return super.write(data)
   }
 
-  _write (data, cb) {
+  _write(data, cb) {
     if (this.aborted) return cb()
 
     if (!this.headersSent) {
       this.headersSent = true
       this.socket[kHead] = {
         headers: this[kHeaders],
-        status: this.status
+        status: this.status,
       }
     }
 
@@ -179,7 +186,7 @@ export class Response extends Writable {
     this.socket.write(data, null, cb)
   }
 
-  _destroy (cb) {
+  _destroy(cb) {
     if (this.socket.destroyed) return cb()
     this.socket.once('close', cb)
   }
