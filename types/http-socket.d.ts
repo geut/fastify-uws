@@ -21,4 +21,5 @@ export class HTTPSocket {
     end(data: any, _: any, cb?: () => void): void;
     write(data: any, _: any, cb?: () => void): boolean;
     _clearTimeout(): void;
+    _onWrite(data: any, cb: any): void;
 }

@@ -31,8 +31,8 @@ export class Server {
      * @param {() => void} [cb]
      */
     close(cb?: () => void): void;
-    ref(): void;
-    unref(): void;
+    ref: () => void;
+    unref: () => void;
     [kListen]({ port, host }: {
         port: any;
         host: any;
