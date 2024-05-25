@@ -1,14 +1,17 @@
 {
-	"compilerOptions": {
-		"allowJs": true,
-		"checkJs": true,
-		"noEmit": true,
-		"module": "NodeNext",
-		"target": "ES2022",
-		"moduleResolution": "NodeNext",
-		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true,
-		"forceConsistentCasingInFileNames": true
-	},
-	"include": ["./src/**/*.js", "types/fastify-overload.d.ts"]
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "module": "NodeNext",
+    "target": "ES2022",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "./src/**/*.js",
+    "types/fastify-overload.d.ts"
+  ]
 }
