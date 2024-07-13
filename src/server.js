@@ -204,7 +204,6 @@ export class Server extends EventEmitter {
     if (this[kAddress].address.startsWith('[')) {
       throw new ERR_ENOTFOUND(this[kAddress].address)
     }
-
     if (mainServer[port] && host !== 'localhost' && mainServer[port][kListenAll]) return
 
     const parsedAddress = ipaddr.parse(this[kAddress].address)

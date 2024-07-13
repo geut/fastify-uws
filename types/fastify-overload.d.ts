@@ -4,7 +4,7 @@ import { IncomingMessage, ServerResponse, Server } from 'http';
 import { FastifyRequest, RawServerBase, RawServerDefault, RawRequestDefaultExpression, RawReplyDefaultExpression, RequestGenericInterface, ContextConfigDefault, FastifyInstance, FastifySchema, FastifyTypeProvider, FastifyTypeProviderDefault, FastifyBaseLogger } from 'fastify';
 import * as fastify from 'fastify';
 import { RouteGenericInterface } from 'fastify/types/route.js';
-import type { WebSocketServer, WebSocket } from './websocket-server.js';
+import type { WebSocketServer, WebSocket } from '../src/websocket-server.js';
 
 declare module 'fastify' {
   interface RouteShorthandOptions<

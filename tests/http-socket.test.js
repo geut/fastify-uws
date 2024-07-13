@@ -17,7 +17,8 @@ test('writable drain', async () => {
     res.end()
   })
 
-  await new Promise(resolve => server.listen({ host: 'localhost' }, resolve))
+  server.listen({ host: 'localhost' })
+  await new Promise(resolve => server.once('listening', resolve))
 
   const res = await fetch(`http://localhost:${server.address().port}`).then(
     res => res.arrayBuffer()
