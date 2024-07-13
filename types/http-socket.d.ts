@@ -6,7 +6,7 @@ export class HTTPSocket {
     bytesWritten: number;
     writableEnded: boolean;
     errored: any;
-    get readyState(): "open" | "opening" | "readOnly" | "writeOnly";
+    get readyState(): "open" | "readOnly" | "writeOnly" | "opening";
     get writable(): boolean;
     get readable(): boolean;
     get encrypted(): boolean;

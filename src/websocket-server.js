@@ -21,7 +21,7 @@
 
 /**
  * @typedef {{
- *   closeOnBackpressureLimit?: number;
+ *   closeOnBackpressureLimit?: boolean;
  *   compression?: number;
  *   idleTimeout?: number;
  *   maxBackpressure?: number;

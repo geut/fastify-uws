@@ -2,7 +2,6 @@ import { Readable } from 'streamx'
 
 import { kHeaders, kReq, kUrl } from './symbols.js'
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 function onAbort() {
@@ -11,7 +10,7 @@ function onAbort() {
 
 export class Request extends Readable {
   constructor(req, socket, method) {
-    super({ highWaterMark: 0 })
+    super()
 
     this.socket = socket
     this.method = method

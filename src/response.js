@@ -26,7 +26,6 @@ function onAbort() {
   this.emit('aborted')
 }
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 const options = {

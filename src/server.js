@@ -23,15 +23,15 @@ import EventEmitter from 'node:events'
 import { writeFileSync } from 'node:fs'
 
 import ipaddr from 'ipaddr.js'
-import tempy from 'tempy'
+import { temporaryFile } from 'tempy'
 import uws from 'uWebSockets.js'
 
 import {
   ERR_ADDRINUSE,
   ERR_ENOTFOUND,
+  ERR_SERVER_DESTROYED,
   ERR_SOCKET_BAD_PORT,
   ERR_UWS_APP_NOT_FOUND,
-  ERR_SERVER_DESTROYED,
 } from './errors.js'
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
@@ -49,15 +49,14 @@ import {
   kWs,
 } from './symbols.js'
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 function createApp(https) {
   if (!https) return uws.App()
   if (!https.key) return uws.SSLApp(https)
-  const keyFile = tempy.file()
+  const keyFile = temporaryFile()
   writeFileSync(keyFile, https.key)
-  const certFile = tempy.file()
+  const certFile = temporaryFile()
   writeFileSync(certFile, https.cert)
   return uws.SSLApp({
     key_file_name: keyFile,

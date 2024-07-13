@@ -5,7 +5,7 @@ export class Request extends Readable<any, any, any, true, false, import("stream
     httpVersion: string;
     readableEnded: boolean;
     get aborted(): any;
-    set url(arg: any);
+    set url(url: any);
     get url(): any;
     get headers(): any;
     setEncoding(encoding: any): void;

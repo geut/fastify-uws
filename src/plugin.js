@@ -17,7 +17,6 @@ import { WebSocket, WebSocketServer } from './websocket-server.js'
  * @param {WebSocket} conn
  * @param {import('fastify').FastifyRequest} request
  */
-// biome-ignore lint/correctness/noUnusedVariables: ignore
 function defaultErrorHandler(err, conn, request) {
   request.log.error(err)
   request.raw.destroy(err)

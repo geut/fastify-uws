@@ -1,12 +1,3 @@
 {
-  "editor.codeActionsOnSave": {
-    "source.organizeImports.biome": "explicit",
-    "quickfix.biome": "explicit"
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  }
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint"
 }

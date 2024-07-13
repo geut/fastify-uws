@@ -40,7 +40,6 @@ const localAddressIpv6 = Buffer.from([
 
 const toHex = (buf, start, end) => buf.slice(start, end).toString('hex')
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 /**
