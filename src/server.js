@@ -260,7 +260,7 @@ export class Server extends EventEmitter {
       }
 
       this[kListenAll] = host === 'localhost'
-
+      console.log('llega')
       if (this[kListenAll]) {
         app.listen(port, onListen)
       } else {

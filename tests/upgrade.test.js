@@ -73,7 +73,6 @@ test('upgrade to both servers 2', async () => {
   const app = Fastify()
 
   app.get('/', () => {
-    console.log('entra')
     return {}
   })
 

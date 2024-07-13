@@ -51,7 +51,7 @@ test('basic websocket', async (context) => {
       },
     })
     .listen({
-      port: 3000,
+      port: 0,
       host: '127.0.0.1',
     })
 

@@ -5,7 +5,7 @@ import { serverFactory } from '../src/server.js'
 
 test('fastify should listen succesful', async () => {
   const app = fastify({ serverFactory })
-  await app.listen({ port: 3000 })
+  await app.listen({ port: 0 })
   await app.close()
 })
 
