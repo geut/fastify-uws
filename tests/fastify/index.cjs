@@ -1,6 +1,6 @@
-const { Readable } = require('stream')
-const path = require('path')
-const { once } = require('events')
+const { Readable } = require('node:stream')
+const path = require('node:path')
+const { once } = require('node:events')
 const requireInject = require('require-inject')
 const _sget = require('simple-get').concat
 
@@ -11,10 +11,10 @@ const FASTIFY_CWD = path.resolve(__dirname, 'module')
 
 // set on a test object directly, after creation
 
-function requireTap (ignore) {
+function requireTap(ignore) {
   const t = requireInject.withEmptyCache('tap')
 
-  function wrapTest (t) {
+  function wrapTest(t) {
     const _test = t.test
 
     t.test = (name, cb, ...args) => {
@@ -40,7 +40,7 @@ function requireTap (ignore) {
 module.exports = async (serverFactory, opts = {}) => {
   const fastify = (opts = {}) => _fastify({
     ...opts,
-    serverFactory
+    serverFactory,
   })
 
   const { tests, ignore } = opts
@@ -76,7 +76,7 @@ module.exports = async (serverFactory, opts = {}) => {
       }
 
       return _sget({ ...opts, body }, cb)
-    }
+    },
   }
 
   const cwd = process.cwd.bind(process)
@@ -93,7 +93,7 @@ module.exports = async (serverFactory, opts = {}) => {
         './module/fastify.js': fastify,
         './module/lib/symbols.js': symbols,
         'simple-get': simpleGet,
-        tap: t
+        'tap': t,
       })
 
       await done

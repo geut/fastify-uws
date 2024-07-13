@@ -17,10 +17,10 @@
  * @typedef {import('fastify').FastifyServerFactory} FastifyServerFactory
  */
 
-import assert from 'assert'
-import EventEmitter from 'events'
-import { writeFileSync } from 'fs'
-import dns from 'dns/promises'
+import assert from 'node:assert'
+import dns from 'node:dns/promises'
+import EventEmitter from 'node:events'
+import { writeFileSync } from 'node:fs'
 
 import ipaddr from 'ipaddr.js'
 import tempy from 'tempy'
@@ -31,6 +31,7 @@ import {
   ERR_ENOTFOUND,
   ERR_SOCKET_BAD_PORT,
   ERR_UWS_APP_NOT_FOUND,
+  ERR_SERVER_DESTROYED,
 } from './errors.js'
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
@@ -42,6 +43,8 @@ import {
   kHandler,
   kHttps,
   kListen,
+  kListenAll,
+  kListening,
   kListenSocket,
   kWs,
 } from './symbols.js'
@@ -77,7 +80,7 @@ export class Server extends EventEmitter {
 
     assert(
       !https || typeof https === 'object',
-      'https must be a valid object { key: string, cert: string } or follow the uws.AppOptions',
+      'https must be a valid object { key: string, cert: string } or follow the uws.AppOptions'
     )
 
     this[kHandler] = handler
@@ -89,11 +92,18 @@ export class Server extends EventEmitter {
     this[kListenSocket] = null
     this[kApp] = createApp(this[kHttps])
     this[kClosed] = false
+    this[kListenAll] = false
+    this[kListening] = false
   }
 
   /** @type {boolean} */
   get encrypted() {
     return !!this[kHttps]
+  }
+
+  /** @type {boolean} */
+  get listening() {
+    return this[kListening]
   }
 
   /**
@@ -112,46 +122,65 @@ export class Server extends EventEmitter {
 
   /**
    *
-   * @param {{ host: string, port: number }} listenOptions
-   * @param {() => void} cb
+   * @param {{
+   *   host: string
+   *   port: number
+   *   signal: AbortSignal
+   * }} listenOptions
    */
-  listen(listenOptions, cb) {
+  listen(listenOptions) {
+    if (listenOptions?.signal) {
+      listenOptions.signal.addEventListener('abort', () => {
+        this.close()
+      })
+    }
+
     this[kListen](listenOptions)
-      .then(() => cb && cb())
+      .then(() => {
+        this[kListening] = true
+        this.emit('listening')
+      })
       .catch((err) => {
         this[kAddress] = null
         process.nextTick(() => this.emit('error', err))
       })
   }
 
+  closeIdleConnections() {
+    this.close()
+  }
+
   /**
    * @param {() => void} [cb]
    */
   close(cb = noop) {
+    this[kAddress] = null
+    this[kListening] = false
     if (this[kClosed]) return cb()
     const port = this[kAddress]?.port
     if (port !== undefined && mainServer[port] === this) {
       delete mainServer[port]
     }
-    this[kAddress] = null
     this[kClosed] = true
     if (this[kListenSocket]) {
       uws.us_listen_socket_close(this[kListenSocket])
       this[kListenSocket] = null
     }
     if (this[kWs]) {
-      this[kWs].connections.forEach((conn) => conn.close())
+      this[kWs].connections.forEach(conn => conn.close())
     }
-    setTimeout(() => {
+    process.nextTick(() => {
       this.emit('close')
       cb()
-    }, 1)
+    })
   }
 
   ref = noop
   unref = noop
 
   async [kListen]({ port, host }) {
+    if (this[kClosed]) throw new ERR_SERVER_DESTROYED()
+
     if (port !== undefined && port !== null && Number.isNaN(Number(port))) {
       throw new ERR_SOCKET_BAD_PORT(port)
     }
@@ -165,19 +194,30 @@ export class Server extends EventEmitter {
       port,
     }
 
-    if (this[kAddress].address.startsWith('['))
+    if (this[kAddress].family === 4) {
+      this[kAddress].family = 'IPv4'
+    }
+
+    if (this[kAddress].family === 6) {
+      this[kAddress].family = 'IPv6'
+    }
+
+    if (this[kAddress].address.startsWith('[')) {
       throw new ERR_ENOTFOUND(this[kAddress].address)
+    }
+
+    if (mainServer[port] && host !== 'localhost' && mainServer[port][kListenAll]) return
 
     const parsedAddress = ipaddr.parse(this[kAddress].address)
     const longAddress = parsedAddress.toNormalizedString()
 
     const app = this[kApp]
 
-    const onRequest = (method) => (res, req) => {
+    const onRequest = method => (res, req) => {
       const socket = new HTTPSocket(
         this,
         res,
-        method === 'GET' || method === 'HEAD',
+        method === 'GET' || method === 'HEAD'
       )
       const request = new Request(req, socket, method)
       const response = new Response(socket)
@@ -209,16 +249,25 @@ export class Server extends EventEmitter {
     }
 
     return new Promise((resolve, reject) => {
-      app.listen(longAddress, port, (listenSocket) => {
-        if (!listenSocket)
+      const onListen = (listenSocket) => {
+        if (!listenSocket) {
           return reject(new ERR_ADDRINUSE(this[kAddress].address, port))
+        }
         this[kListenSocket] = listenSocket
         port = this[kAddress].port = uws.us_socket_local_port(listenSocket)
         if (!mainServer[port]) {
           mainServer[port] = this
         }
         resolve()
-      })
+      }
+
+      this[kListenAll] = host === 'localhost'
+
+      if (this[kListenAll]) {
+        app.listen(port, onListen)
+      } else {
+        app.listen(longAddress, port, onListen)
+      }
     })
   }
 }
@@ -226,7 +275,7 @@ export class Server extends EventEmitter {
 /** @type {FastifyServerFactory} */
 export const serverFactory = (handler, opts) => {
   // @ts-ignore
-  // eslint-disable-next-line no-new
+
   return new Server(handler, opts)
 }
 

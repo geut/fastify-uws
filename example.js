@@ -1,7 +1,7 @@
 import fastify from 'fastify'
-import { WebSocketStream, getUws, serverFactory } from './src/server.js'
 
 import fastifyUwsPlugin from './src/plugin.js'
+import { getUws, serverFactory, WebSocketStream } from './src/server.js'
 
 const app = fastify({
   serverFactory,
@@ -21,6 +21,8 @@ app.websocketServer.on('open', (ws) => {
 app.websocketServer.on('close', (ws) => {
   console.log('CLOSE')
 })
+
+app.get('/pepe', () => 'hi')
 
 app
   .route({
@@ -47,11 +49,6 @@ app
       console.log('stream data from /stream')
     })
   })
-  .listen(
-    {
-      port: 3000,
-    },
-    (err) => {
-      err && console.error(err)
-    },
-  )
+  .listen({ port: 3000,}, (err) => {
+    err && console.error(err)
+  })

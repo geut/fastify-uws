@@ -1,15 +1,15 @@
 /**
  * @template T
- * @typedef {import('fastify').FastifyPluginCallback<T>} FastifyPluginCallback */
+  @typedef {import('fastify').FastifyPluginCallback<T>} FastifyPluginCallback */
 
 /** @typedef {import('./websocket-server.js').WSOptions} WSOptions */
 
 /** @typedef {import('./request.js').Request} Request */
 
 import fp from 'fastify-plugin'
-import { WebSocket, WebSocketServer } from './websocket-server.js'
 
 import { kRes, kWs } from './symbols.js'
+import { WebSocket, WebSocketServer } from './websocket-server.js'
 
 /**
  * @this {import('fastify').FastifyInstance}
@@ -99,8 +99,8 @@ function fastifyUws(fastify, opts, next) {
               }
 
               if (result && typeof result.catch === 'function') {
-                result.catch((err) =>
-                  errorHandler.call(this, err, conn, request),
+                result.catch(err =>
+                  errorHandler.call(this, err, conn, request)
                 )
               }
             },
@@ -108,7 +108,7 @@ function fastifyUws(fastify, opts, next) {
           requestRaw.headers['sec-websocket-key'],
           requestRaw.headers['sec-websocket-protocol'],
           requestRaw.headers['sec-websocket-extensions'],
-          requestRaw[kWs],
+          requestRaw[kWs]
         )
       } else {
         return httpHandler.call(this, request, reply)

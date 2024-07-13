@@ -52,10 +52,11 @@
  * }} WebsocketServerEvent
  */
 
-import EventEmitter from 'events'
-import uws from 'uWebSockets.js'
+import EventEmitter from 'node:events'
 
 import { Duplex } from 'streamx'
+import uws from 'uWebSockets.js'
+
 import { HTTPSocket } from './http-socket.js'
 import { Request } from './request.js'
 import { Response } from './response.js'
@@ -136,7 +137,7 @@ export class WebSocket extends EventEmitter {
       this.allocTopic(topic),
       message,
       isBinary,
-      compress,
+      compress
     )
   }
 
@@ -168,7 +169,7 @@ export class WebSocket extends EventEmitter {
     if (this[kEnded]) return []
     return this.connection
       .getTopics()
-      .map((topic) => topic.slice(topic.indexOf(SEP) + 1))
+      .map(topic => topic.slice(topic.indexOf(SEP) + 1))
   }
 
   close() {
@@ -314,7 +315,7 @@ export class WebSocketServer extends EventEmitter {
         const socket = new HTTPSocket(
           server,
           res,
-          method === 'GET' || method === 'HEAD',
+          method === 'GET' || method === 'HEAD'
         )
         const request = new Request(req, socket, method)
         const response = new Response(socket)

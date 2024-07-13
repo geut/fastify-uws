@@ -8,9 +8,10 @@ const noop = () => {}
 function onAbort() {
   this.emit('aborted')
 }
+
 export class Request extends Readable {
   constructor(req, socket, method) {
-    super()
+    super({ highWaterMark: 0 })
 
     this.socket = socket
     this.method = method

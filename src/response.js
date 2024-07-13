@@ -1,4 +1,4 @@
-import { STATUS_CODES } from 'http'
+import { STATUS_CODES } from 'node:http'
 
 import { Writable } from 'streamx'
 
@@ -129,6 +129,13 @@ export class Response extends Writable {
       Object.keys(headers).forEach((key) => {
         this.setHeader(key, headers[key])
       })
+    }
+
+    this.headersSent = true
+
+    this.socket[kHead] = {
+      headers: this[kHeaders],
+      status: this.status,
     }
   }
 

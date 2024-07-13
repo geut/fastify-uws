@@ -1,6 +1,6 @@
-import { once } from 'events'
-import { connect } from 'net'
-import { lookup } from 'dns/promises'
+import { lookup } from 'node:dns/promises'
+import { once } from 'node:events'
+import { connect } from 'node:net'
 
 import Fastify from 'fastify'
 import { test } from 'uvu'
