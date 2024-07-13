@@ -12,6 +12,6 @@
   },
   "include": [
     "./src/**/*.js",
-    "types/fastify-overload.d.ts"
+    "./src/**/*.d.ts"
   ]
 }
