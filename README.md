@@ -16,10 +16,9 @@ $ npm install @geut/fastify-uws
 ## Usage
 
 ```javascript
-import fastify from 'fastify'
-import { serverFactory, getUws, WebSocketStream } from '@geut/fastify-uws'
-
+import { getUws, serverFactory, WebSocketStream } from '@geut/fastify-uws'
 import fastifyUwsPlugin from '@geut/fastify-uws/plugin'
+import fastify from 'fastify'
 
 const app = fastify({
   serverFactory
@@ -32,11 +31,11 @@ app.addHook('onReady', async () => {
   const uwsApp = getUws(app)
 })
 
-app.websocketServer.on('open', ws => {
+app.websocketServer.on('open', (ws) => {
   console.log('OPEN')
 })
 
-app.websocketServer.on('close', ws => {
+app.websocketServer.on('close', (ws) => {
   console.log('CLOSE')
 })
 
@@ -44,7 +43,7 @@ app
   .route({
     method: 'GET',
     url: '/',
-    handler (req, reply) {
+    handler(req, reply) {
       return 'hello from http endpoint'
     },
     uws: {
@@ -54,7 +53,7 @@ app
         'home/sensors/temp'
       ]
     },
-    uwsHandler (conn) {
+    uwsHandler(conn) {
       conn.subscribe('home/sensors/temp')
       conn.on('message', (message) => {
         conn.publish('home/sensors/temp', 'random message')
@@ -64,7 +63,7 @@ app
   })
   .get('/stream', { uws: true }, (conn) => {
     const stream = new WebSocketStream(conn)
-    stream.on('data', data => {
+    stream.on('data', (data) => {
       console.log('stream data from /stream')
     })
   })

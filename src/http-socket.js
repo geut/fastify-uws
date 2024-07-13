@@ -1,6 +1,8 @@
-import EventEmitter from 'events'
+import EventEmitter from 'node:events'
+
 import fastq from 'fastq'
 
+import { ERR_STREAM_DESTROYED } from './errors.js'
 import {
   kAddress,
   kEncoding,
@@ -17,15 +19,27 @@ import {
   kWs,
 } from './symbols.js'
 
-import { ERR_STREAM_DESTROYED } from './errors.js'
-
 const localAddressIpv6 = Buffer.from([
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
 ])
 
 const toHex = (buf, start, end) => buf.slice(start, end).toString('hex')
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 /**
@@ -173,7 +187,7 @@ export class HTTPSocket extends EventEmitter {
 
     if (buf.length === 4) {
       remoteAddress = `${buf.readUInt8(0)}.${buf.readUInt8(1)}.${buf.readUInt8(
-        2,
+        2
       )}.${buf.readUInt8(3)}`
     } else {
       // avoid to call toHex if local
@@ -183,11 +197,11 @@ export class HTTPSocket extends EventEmitter {
         remoteAddress = `${toHex(buf, 0, 2)}:${toHex(buf, 2, 4)}:${toHex(
           buf,
           4,
-          6,
+          6
         )}:${toHex(buf, 6, 8)}:${toHex(buf, 8, 10)}:${toHex(
           buf,
           10,
-          12,
+          12
         )}:${toHex(buf, 12, 14)}:${toHex(buf, 14)}`
       }
     }

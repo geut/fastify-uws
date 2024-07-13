@@ -2,12 +2,12 @@ import { Readable } from 'streamx'
 
 import { kHeaders, kReq, kUrl } from './symbols.js'
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: noop
 const noop = () => {}
 
 function onAbort() {
   this.emit('aborted')
 }
+
 export class Request extends Readable {
   constructor(req, socket, method) {
     super()

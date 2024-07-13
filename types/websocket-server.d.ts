@@ -69,7 +69,7 @@ export class WebSocket {
      * @param {T} eventName
      * @param {WebsocketEvent[T]} listener
      */
-    once<T_1 extends keyof WebsocketEvent>(eventName: T_1, listener: WebsocketEvent[T_1]): any;
+    once<T extends keyof WebsocketEvent>(eventName: T, listener: WebsocketEvent[T]): any;
     [kEnded]: boolean;
 }
 export class WebSocketStream extends Duplex<any, any, any, any, true, true, import("streamx").DuplexEvents<any, any>> {
@@ -123,7 +123,7 @@ export class WebSocketServer {
         compression: any;
         maxPayloadLength: number;
         idleTimeout: number;
-        closeOnBackpressureLimit?: number;
+        closeOnBackpressureLimit?: boolean;
         maxBackpressure?: number;
         maxLifetime?: number;
         sendPingsAutomatically?: boolean;
@@ -132,7 +132,7 @@ export class WebSocketServer {
     /**
      * @param {import('./server.js').Server} server
      */
-    addServer(server: import('./server.js').Server): void;
+    addServer(server: import("./server.js").Server): void;
     /**
      * @template {keyof WebsocketServerEvent} T
      * @param {T} eventName
@@ -144,11 +144,11 @@ export class WebSocketServer {
      * @param {T} eventName
      * @param {WebsocketServerEvent[T]} listener
      */
-    once<T_1 extends keyof WebsocketServerEvent>(eventName: T_1, listener: WebsocketServerEvent[T_1]): any;
+    once<T extends keyof WebsocketServerEvent>(eventName: T, listener: WebsocketServerEvent[T]): any;
 }
-export type UWebSocket<T> = import('uWebSockets.js').WebSocket<T>;
-export type TemplatedApp = import('uWebSockets.js').TemplatedApp;
-export type RecognizedString = import('uWebSockets.js').RecognizedString;
+export type UWebSocket<T> = import("uWebSockets.js").WebSocket<T>;
+export type TemplatedApp = import("uWebSockets.js").TemplatedApp;
+export type RecognizedString = import("uWebSockets.js").RecognizedString;
 export type UserData = {
     req: Request;
     handler: (ws: UWebSocket<UserData>) => void;
@@ -158,7 +158,7 @@ export type UWSocket = UWebSocket<UserData> & {
     websocket: WebSocket;
 };
 export type WSOptions = {
-    closeOnBackpressureLimit?: number;
+    closeOnBackpressureLimit?: boolean;
     compression?: number;
     idleTimeout?: number;
     maxBackpressure?: number;

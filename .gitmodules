@@ -1,4 +1,4 @@
 [submodule "tests/fastify/module"]
 	path = tests/fastify/module
 	url = git@github.com:fastify/fastify.git
-	branch = main
+	branch = 4.x
