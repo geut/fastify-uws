@@ -1,8 +1,10 @@
+![uWebSockets.js for fastify](.github/assets/logo.png 'uWebSockets.js for fastify')
+
 # fastify-uws
 [uWebSockets.js](https://github.com/uNetworking/uWebSockets.js) for fastify
 
 ![Tests](https://github.com/geut/fastify-uws/actions/workflows/test.yml/badge.svg)
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg?style=flat)](https://standardjs.com)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard--ext-05ae89.svg)](https://github.com/tinchoz49/eslint-config-standard-ext)
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat)](https://github.com/RichardLitt/standard-readme)
 
 [![Made by GEUT][geut-badge]][geut-url]
