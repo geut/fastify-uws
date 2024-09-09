@@ -19,6 +19,8 @@ import {
   kWs,
 } from './symbols.js'
 
+const kReadCallback = Symbol('uws.readCallback')
+
 const localAddressIpv6 = Buffer.from([
   0,
   0,
@@ -62,23 +64,6 @@ function onTimeout() {
     this.emit('timeout')
     this.abort()
   }
-}
-
-function end(socket, data) {
-  socket._clearTimeout()
-
-  const res = socket[kRes]
-
-  res.cork(() => {
-    if (socket[kHead]) {
-      writeHead(res, socket[kHead])
-      socket[kHead] = null
-    }
-    res.end(getChunk(data))
-    socket.bytesWritten += byteLength(data)
-    socket.emit('close')
-    socket.emit('finish')
-  })
 }
 
 function drain(socket, cb) {
@@ -125,6 +110,29 @@ function getChunk(data) {
   return data
 }
 
+/**
+ * @this {HTTPSocket}
+ */
+function onData(chunk, isLast) {
+  if (this.readableEnded) return
+
+  this.bytesRead += chunk.byteLength
+
+  if (this[kEncoding]) {
+    chunk = Buffer.from(chunk).toString(this[kEncoding])
+  } else {
+    chunk = Buffer.copyBytesFrom(new Uint8Array(chunk))
+  }
+
+  this.emit('data', chunk)
+
+  this[kReadCallback](null, chunk)
+  if (isLast) {
+    this.readableEnded = true
+    this[kReadCallback](null, null)
+  }
+}
+
 export class HTTPSocket extends EventEmitter {
   constructor(server, res, writeOnly) {
     super()
@@ -133,6 +141,7 @@ export class HTTPSocket extends EventEmitter {
     this.writableNeedDrain = false
     this.bytesRead = 0
     this.bytesWritten = 0
+    this.readableEnded = false
     this.writableEnded = false
     this.errored = null
     this[kServer] = server
@@ -146,6 +155,8 @@ export class HTTPSocket extends EventEmitter {
     this[kRemoteAdress] = null
     this[kUwsRemoteAddress] = null
     this[kHead] = null
+    this[kQueue] = fastq(this, this._onWrite, 1)
+    this[kReadCallback] = null
 
     this.once('error', noop) // maybe?
     res.onAborted(onAbort.bind(this))
@@ -229,7 +240,7 @@ export class HTTPSocket extends EventEmitter {
   abort() {
     if (this.aborted) return
     this.aborted = true
-    this[kQueue] && this[kQueue].kill()
+    this[kQueue].kill()
     if (!this[kWs] && !this.writableEnded) {
       this[kRes].close()
     }
@@ -249,31 +260,11 @@ export class HTTPSocket extends EventEmitter {
   onRead(cb) {
     if (this[kWriteOnly] || this.aborted) return cb(null, null)
 
-    let done = false
+    this[kReadCallback] = cb
     this[kReadyState].read = true
-    const encoding = this[kEncoding]
     try {
-      this[kRes].onData((chunk, isLast) => {
-        if (done) return
-
-        chunk = Buffer.from(chunk)
-
-        this.bytesRead += Buffer.byteLength(chunk)
-
-        if (encoding) {
-          chunk = chunk.toString(encoding)
-        }
-
-        this.emit('data', chunk)
-
-        cb(null, chunk)
-        if (isLast) {
-          done = true
-          cb(null, null)
-        }
-      })
+      this[kRes].onData(onData.bind(this))
     } catch (err) {
-      done = true
       this.destroy(err)
       cb(err)
     }
@@ -283,27 +274,12 @@ export class HTTPSocket extends EventEmitter {
     if (this.aborted) throw new ERR_STREAM_DESTROYED()
 
     if (!data) return this.abort()
-
     this.writableEnded = true
-    const queue = this[kQueue]
-
-    // fast end
-    if (!queue || queue.idle()) {
-      end(this, data)
-      cb()
-      return
-    }
-
-    queue.push(data, cb)
+    this[kQueue].push(data, cb)
   }
 
   write(data, _, cb = noop) {
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
-
-    if (!this[kQueue]) {
-      this[kQueue] = fastq(this, this._onWrite, 1)
-    }
-
     this[kQueue].push(data, cb)
     return !this.writableNeedDrain
   }
@@ -323,9 +299,17 @@ export class HTTPSocket extends EventEmitter {
         this[kHead] = null
       }
 
+      if (data.end) {
+        this._clearTimeout()
+        res.end(getChunk(data))
+        this.bytesWritten += byteLength(data)
+        this.emit('close')
+        this.emit('finish')
+        return cb()
+      }
+
       const drained = res.write(getChunk(data))
       this.bytesWritten += byteLength(data)
-
       if (drained) return cb()
       drain(this, cb)
     })

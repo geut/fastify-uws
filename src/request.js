@@ -8,6 +8,24 @@ function onAbort() {
   this.emit('aborted')
 }
 
+/**
+ * @this {Request}
+ */
+function onRead(err, data) {
+  if (err) return this[kCallback](err)
+
+  if (this.destroyed || this.destroying) return this[kCallback]()
+
+  this.push(data)
+
+  if (!data) {
+    this.readableEnded = true
+    this[kCallback]()
+  }
+}
+
+const kCallback = Symbol('uws.callback')
+
 export class Request extends Readable {
   constructor(req, socket, method) {
     super()
@@ -19,6 +37,7 @@ export class Request extends Readable {
     this[kReq] = req
     this[kUrl] = null
     this[kHeaders] = null
+    this[kCallback] = null
 
     this.once('error', noop)
     const destroy = super.destroy.bind(this)
@@ -69,19 +88,7 @@ export class Request extends Readable {
 
   _read(cb) {
     if (this.destroyed || this.destroying || this.socket.destroyed) return cb()
-
-    this.socket.onRead((err, data) => {
-      if (err) return cb(err)
-
-      if (this.destroyed || this.destroying) return cb()
-
-      this.push(data)
-
-      if (!data) {
-        this.readableEnded = true
-      }
-
-      cb()
-    })
+    this[kCallback] = cb
+    this.socket.onRead(onRead.bind(this))
   }
 }
