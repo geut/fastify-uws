@@ -25,14 +25,29 @@ for (const bench of benchs) {
     url: `http://localhost:3000/${bench.file}`,
     connections: 100,
     pipelining: 10,
-    duration: 2,
+    duration: 3,
   })
 
-  console.log(autocannon.printResult(result, { detailed: true }))
-
-  results.set(bench.name, result)
+  results.set(bench.name, {
+    name: bench.name,
+    ...result,
+  })
 
   child.kill('SIGINT')
 }
 
-console.log(autocannonCompare(results.get('fastify-node'), results.get('fastify-uws')))
+const a = results.get('fastify-node')
+const b = results.get('fastify-uws')
+
+const comp = autocannonCompare(a, b)
+
+console.log(`a: ${a.requests.average}`)
+console.log(`b: ${b.requests.average}`)
+
+if (comp.equal) {
+  console.log('Same performance!')
+} else if (comp.aWins) {
+  console.log(`${a.name} is faster than ${b.name} by ${comp.requests.difference} of difference`)
+} else {
+  console.log(`${b.name} is faster than ${a.name} by ${autocannonCompare(b, a).requests.difference} of difference`)
+}

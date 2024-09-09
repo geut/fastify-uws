@@ -19,9 +19,9 @@
 
 import assert from 'node:assert'
 import dns from 'node:dns/promises'
-import EventEmitter from 'node:events'
 import { writeFileSync } from 'node:fs'
 
+import { EventEmitter } from 'eventemitter3'
 import ipaddr from 'ipaddr.js'
 import { temporaryFile } from 'tempy'
 import uws from 'uWebSockets.js'

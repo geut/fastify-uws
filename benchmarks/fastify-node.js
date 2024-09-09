@@ -10,5 +10,4 @@ app.get('/', (req, reply) => {
 
 app.listen({ port: 3000 }, async (err, address) => {
   if (err) throw err
-  console.log(`Server is running on ${address}`)
 })

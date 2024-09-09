@@ -56,8 +56,8 @@
     "types": "node scripts/generate-dts.js"
   },
   "dependencies": {
+    "eventemitter3": "^5.0.1",
     "fastify-plugin": "^4.5.1",
-    "fastq": "^1.17.1",
     "ipaddr.js": "^2.2.0",
     "nanoerror": "^2.0.0",
     "streamx": "npm:@geut/streamx@^2.20.1",
