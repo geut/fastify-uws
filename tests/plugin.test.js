@@ -1,10 +1,10 @@
 import { once } from 'node:events'
-import WebSocket from 'ws'
-
 import fastify from 'fastify'
+
 import sget from 'simple-get'
 import { test } from 'uvu'
 import * as assert from 'uvu/assert'
+import WebSocket from 'ws'
 
 import fastifyUwsPlugin from '../src/plugin.js'
 import { serverFactory } from '../src/server.js'

@@ -52,8 +52,7 @@
  * }} WebsocketServerEvent
  */
 
-import EventEmitter from 'node:events'
-
+import { EventEmitter } from 'eventemitter3'
 import { Duplex } from 'streamx'
 import uws from 'uWebSockets.js'
 
@@ -71,6 +70,9 @@ const defaultWebSocketConfig = {
 const SEP = '!'
 const SEP_BUFFER = Buffer.from(SEP)
 
+/**
+ * @extends {EventEmitter<keyof WebsocketEvent, WebsocketEvent[keyof WebsocketEvent]>}
+ */
 export class WebSocket extends EventEmitter {
   /**
    * @param {Buffer} namespace
@@ -208,24 +210,6 @@ export class WebSocket extends EventEmitter {
     if (this[kEnded]) return
     return this.connection.ping(message)
   }
-
-  /**
-   * @template {keyof WebsocketEvent} T
-   * @param {T} eventName
-   * @param {WebsocketEvent[T]} listener
-   */
-  on(eventName, listener) {
-    return super.on(eventName, listener)
-  }
-
-  /**
-   * @template {keyof WebsocketEvent} T
-   * @param {T} eventName
-   * @param {WebsocketEvent[T]} listener
-   */
-  once(eventName, listener) {
-    return super.once(eventName, listener)
-  }
 }
 
 export class WebSocketStream extends Duplex {
@@ -290,6 +274,9 @@ export class WebSocketStream extends Duplex {
   }
 }
 
+/**
+ * @extends {EventEmitter<keyof WebsocketServerEvent, WebsocketServerEvent[keyof WebsocketServerEvent]>}
+ */
 export class WebSocketServer extends EventEmitter {
   /**
    * @param {WSOptions} options
@@ -379,23 +366,5 @@ export class WebSocketServer extends EventEmitter {
       },
       ...options,
     })
-  }
-
-  /**
-   * @template {keyof WebsocketServerEvent} T
-   * @param {T} eventName
-   * @param {WebsocketServerEvent[T]} listener
-   */
-  on(eventName, listener) {
-    return super.on(eventName, listener)
-  }
-
-  /**
-   * @template {keyof WebsocketServerEvent} T
-   * @param {T} eventName
-   * @param {WebsocketServerEvent[T]} listener
-   */
-  once(eventName, listener) {
-    return super.once(eventName, listener)
   }
 }

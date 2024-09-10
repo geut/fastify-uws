@@ -53,24 +53,28 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "prepublishOnly": "npm test && npm run build && npm run types",
-    "types": "node scripts/generate-dts.js"
+    "types": "node scripts/generate-dts.js",
+    "benchmark": "node benchmarks/index.js"
   },
   "dependencies": {
+    "eventemitter3": "^5.0.1",
     "fastify-plugin": "^4.5.1",
-    "fastq": "^1.17.1",
     "ipaddr.js": "^2.2.0",
     "nanoerror": "^2.0.0",
-    "streamx": "^2.18.0",
+    "streamx": "npm:@geut/streamx@^2.20.1",
     "tempy": "^3.1.0",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.44.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.48.0"
   },
   "devDependencies": {
+    "@fastify/multipart": "^8.3.0",
     "@fastify/static": "^7.0.4",
     "@types/events": "^3.0.2",
     "@types/node": "^20.8.10",
     "@types/streamx": "^2.9.3",
+    "autocannon": "^7.15.0",
+    "autocannon-compare": "^0.4.0",
     "eslint": "^8.57.0",
-    "eslint-config-standard-ext": "^0.0.27",
+    "eslint-config-standard-ext": "^2.0.0",
     "execa": "^8.0.1",
     "fastify": "^4.28.1",
     "require-inject": "^1.4.4",

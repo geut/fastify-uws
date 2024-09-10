@@ -1,6 +1,4 @@
-import EventEmitter from 'node:events'
-
-import fastq from 'fastq'
+import { EventEmitter } from 'eventemitter3'
 
 import { ERR_STREAM_DESTROYED } from './errors.js'
 import {
@@ -8,7 +6,6 @@ import {
   kEncoding,
   kHead,
   kHttps,
-  kQueue,
   kReadyState,
   kRemoteAdress,
   kRes,
@@ -62,23 +59,6 @@ function onTimeout() {
     this.emit('timeout')
     this.abort()
   }
-}
-
-function end(socket, data) {
-  socket._clearTimeout()
-
-  const res = socket[kRes]
-
-  res.cork(() => {
-    if (socket[kHead]) {
-      writeHead(res, socket[kHead])
-      socket[kHead] = null
-    }
-    res.end(getChunk(data))
-    socket.bytesWritten += byteLength(data)
-    socket.emit('close')
-    socket.emit('finish')
-  })
 }
 
 function drain(socket, cb) {
@@ -229,7 +209,6 @@ export class HTTPSocket extends EventEmitter {
   abort() {
     if (this.aborted) return
     this.aborted = true
-    this[kQueue] && this[kQueue].kill()
     if (!this[kWs] && !this.writableEnded) {
       this[kRes].close()
     }
@@ -256,12 +235,12 @@ export class HTTPSocket extends EventEmitter {
       this[kRes].onData((chunk, isLast) => {
         if (done) return
 
-        chunk = Buffer.from(chunk)
-
-        this.bytesRead += Buffer.byteLength(chunk)
+        this.bytesRead += chunk.byteLength
 
         if (encoding) {
-          chunk = chunk.toString(encoding)
+          chunk = Buffer.from(chunk).toString(encoding)
+        } else {
+          chunk = Buffer.copyBytesFrom(new Uint8Array(chunk))
         }
 
         this.emit('data', chunk)
@@ -285,34 +264,27 @@ export class HTTPSocket extends EventEmitter {
     if (!data) return this.abort()
 
     this.writableEnded = true
-    const queue = this[kQueue]
 
-    // fast end
-    if (!queue || queue.idle()) {
-      end(this, data)
+    this._clearTimeout()
+
+    const res = this[kRes]
+
+    res.cork(() => {
+      if (this[kHead]) {
+        writeHead(res, this[kHead])
+        this[kHead] = null
+      }
+      res.end(getChunk(data))
+      this.bytesWritten += byteLength(data)
+      this.emit('close')
+      this.emit('finish')
       cb()
-      return
-    }
-
-    queue.push(data, cb)
+    })
   }
 
   write(data, _, cb = noop) {
     if (this.destroyed) throw new ERR_STREAM_DESTROYED()
 
-    if (!this[kQueue]) {
-      this[kQueue] = fastq(this, this._onWrite, 1)
-    }
-
-    this[kQueue].push(data, cb)
-    return !this.writableNeedDrain
-  }
-
-  _clearTimeout() {
-    this[kTimeoutRef] && clearTimeout(this[kTimeoutRef])
-  }
-
-  _onWrite(data, cb) {
     const res = this[kRes]
 
     this[kReadyState].write = true
@@ -329,5 +301,11 @@ export class HTTPSocket extends EventEmitter {
       if (drained) return cb()
       drain(this, cb)
     })
+
+    return !this.writableNeedDrain
+  }
+
+  _clearTimeout() {
+    this[kTimeoutRef] && clearTimeout(this[kTimeoutRef])
   }
 }
