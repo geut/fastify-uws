@@ -53,7 +53,8 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "prepublishOnly": "npm test && npm run build && npm run types",
-    "types": "node scripts/generate-dts.js"
+    "types": "node scripts/generate-dts.js",
+    "benchmark": "node benchmarks/index.js"
   },
   "dependencies": {
     "eventemitter3": "^5.0.1",
