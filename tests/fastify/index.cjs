@@ -1,6 +1,6 @@
-const { Readable } = require('node:stream')
-const path = require('node:path')
 const { once } = require('node:events')
+const path = require('node:path')
+const { Readable } = require('node:stream')
 const requireInject = require('require-inject')
 const _sget = require('simple-get').concat
 
