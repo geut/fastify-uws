@@ -20,7 +20,6 @@ export const kWs: unique symbol;
 export const kTopic: unique symbol;
 export const kDestroyError: unique symbol;
 export const kUwsRemoteAddress: unique symbol;
-export const kQueue: unique symbol;
 export const kHead: unique symbol;
 export const kWebSocketOptions: unique symbol;
 export const kListenAll: unique symbol;

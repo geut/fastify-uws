@@ -1,4 +1,7 @@
-export class WebSocket {
+/**
+ * @extends {EventEmitter<keyof WebsocketEvent, WebsocketEvent[keyof WebsocketEvent]>}
+ */
+export class WebSocket extends EventEmitter<keyof WebsocketEvent, ((code: number, message: ArrayBuffer) => void) | (() => void) | ((message: ArrayBuffer, isBinary: boolean) => void) | ((message: ArrayBuffer) => void) | ((message: ArrayBuffer) => void)> {
     /**
      * @param {Buffer} namespace
      * @param {Buffer | string} topic
@@ -58,18 +61,6 @@ export class WebSocket {
      * @param {RecognizedString} message
      */
     ping(message: RecognizedString): number;
-    /**
-     * @template {keyof WebsocketEvent} T
-     * @param {T} eventName
-     * @param {WebsocketEvent[T]} listener
-     */
-    on<T extends keyof WebsocketEvent>(eventName: T, listener: WebsocketEvent[T]): any;
-    /**
-     * @template {keyof WebsocketEvent} T
-     * @param {T} eventName
-     * @param {WebsocketEvent[T]} listener
-     */
-    once<T extends keyof WebsocketEvent>(eventName: T, listener: WebsocketEvent[T]): any;
     [kEnded]: boolean;
 }
 export class WebSocketStream extends Duplex<any, any, any, any, true, true, import("streamx").DuplexEvents<any, any>> {
@@ -114,7 +105,10 @@ export class WebSocketStream extends Duplex<any, any, any, any, true, true, impo
     _close(cb: any): void;
     _write(packet: any, cb: any): void;
 }
-export class WebSocketServer {
+/**
+ * @extends {EventEmitter<keyof WebsocketServerEvent, WebsocketServerEvent[keyof WebsocketServerEvent]>}
+ */
+export class WebSocketServer extends EventEmitter<keyof WebsocketServerEvent, ((ws: UWSocket) => void) | ((ws: UWSocket, code: number, message: ArrayBuffer) => void) | ((ws: UWSocket) => void) | ((ws: UWSocket, message: ArrayBuffer, isBinary: boolean) => void) | ((ws: UWSocket, message: ArrayBuffer) => void) | ((ws: UWSocket, message: ArrayBuffer) => void)> {
     /**
      * @param {WSOptions} options
      */
@@ -133,18 +127,6 @@ export class WebSocketServer {
      * @param {import('./server.js').Server} server
      */
     addServer(server: import("./server.js").Server): void;
-    /**
-     * @template {keyof WebsocketServerEvent} T
-     * @param {T} eventName
-     * @param {WebsocketServerEvent[T]} listener
-     */
-    on<T extends keyof WebsocketServerEvent>(eventName: T, listener: WebsocketServerEvent[T]): any;
-    /**
-     * @template {keyof WebsocketServerEvent} T
-     * @param {T} eventName
-     * @param {WebsocketServerEvent[T]} listener
-     */
-    once<T extends keyof WebsocketServerEvent>(eventName: T, listener: WebsocketServerEvent[T]): any;
 }
 export type UWebSocket<T> = import("uWebSockets.js").WebSocket<T>;
 export type TemplatedApp = import("uWebSockets.js").TemplatedApp;
@@ -181,6 +163,7 @@ export type WebsocketServerEvent = {
     ping: (ws: UWSocket, message: ArrayBuffer) => void;
     pong: (ws: UWSocket, message: ArrayBuffer) => void;
 };
+import { EventEmitter } from 'eventemitter3';
 import { kEnded } from './symbols.js';
 import { Duplex } from 'streamx';
 import { Request } from './request.js';

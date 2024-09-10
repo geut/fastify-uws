@@ -1,4 +1,4 @@
-export class HTTPSocket {
+export class HTTPSocket extends EventEmitter<string | symbol, any> {
     constructor(server: any, res: any, writeOnly: any);
     aborted: boolean;
     writableNeedDrain: boolean;
@@ -21,5 +21,26 @@ export class HTTPSocket {
     end(data: any, _: any, cb?: () => void): void;
     write(data: any, _: any, cb?: () => void): boolean;
     _clearTimeout(): void;
-    _onWrite(data: any, cb: any): void;
+    [kServer]: any;
+    [kRes]: any;
+    [kWriteOnly]: any;
+    [kReadyState]: {
+        read: boolean;
+        write: boolean;
+    };
+    [kEncoding]: any;
+    [kRemoteAdress]: any;
+    [kUwsRemoteAddress]: any;
+    [kHead]: any;
+    [kTimeoutRef]: NodeJS.Timeout;
 }
+import { EventEmitter } from 'eventemitter3';
+import { kServer } from './symbols.js';
+import { kRes } from './symbols.js';
+import { kWriteOnly } from './symbols.js';
+import { kReadyState } from './symbols.js';
+import { kEncoding } from './symbols.js';
+import { kRemoteAdress } from './symbols.js';
+import { kUwsRemoteAddress } from './symbols.js';
+import { kHead } from './symbols.js';
+import { kTimeoutRef } from './symbols.js';
