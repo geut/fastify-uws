@@ -24,3 +24,4 @@ export const kHead: unique symbol;
 export const kWebSocketOptions: unique symbol;
 export const kListenAll: unique symbol;
 export const kListening: unique symbol;
+export const kClientError: unique symbol;

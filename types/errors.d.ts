@@ -1,3 +1,4 @@
+export const ERR_INVALID_METHOD: any;
 export const ERR_HEAD_SET: any;
 export const ERR_ADDRINUSE: any;
 export const ERR_UPGRADE: any;

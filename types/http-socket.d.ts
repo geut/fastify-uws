@@ -19,7 +19,7 @@ export class HTTPSocket extends EventEmitter<string | symbol, any> {
     destroy(err: any): void;
     onRead(cb: any): any;
     end(data: any, _: any, cb?: () => void): void;
-    write(data: any, _: any, cb?: () => void): boolean;
+    write(data: any, _: any, cb?: () => void): boolean | void;
     _clearTimeout(): void;
     [kServer]: any;
     [kRes]: any;
@@ -32,6 +32,7 @@ export class HTTPSocket extends EventEmitter<string | symbol, any> {
     [kRemoteAdress]: any;
     [kUwsRemoteAddress]: any;
     [kHead]: any;
+    [kClientError]: boolean;
     [kTimeoutRef]: NodeJS.Timeout;
 }
 import { EventEmitter } from 'eventemitter3';
@@ -43,4 +44,5 @@ import { kEncoding } from './symbols.js';
 import { kRemoteAdress } from './symbols.js';
 import { kUwsRemoteAddress } from './symbols.js';
 import { kHead } from './symbols.js';
+import { kClientError } from './symbols.js';
 import { kTimeoutRef } from './symbols.js';
