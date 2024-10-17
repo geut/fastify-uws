@@ -13,13 +13,13 @@
  * }} ServerOptions
  */
 
-/**
- * @typedef {import('fastify').FastifyServerFactory} FastifyServerFactory
- */
-
 import assert from 'node:assert'
 import dns from 'node:dns/promises'
 import { writeFileSync } from 'node:fs'
+/**
+ * @typedef {import('fastify').FastifyServerFactory} FastifyServerFactory
+ */
+import { METHODS } from 'node:http'
 
 import { EventEmitter } from 'eventemitter3'
 import ipaddr from 'ipaddr.js'
@@ -29,6 +29,7 @@ import uws from 'uWebSockets.js'
 import {
   ERR_ADDRINUSE,
   ERR_ENOTFOUND,
+  ERR_INVALID_METHOD,
   ERR_SERVER_DESTROYED,
   ERR_SOCKET_BAD_PORT,
   ERR_UWS_APP_NOT_FOUND,
@@ -39,6 +40,7 @@ import { Response } from './response.js'
 import {
   kAddress,
   kApp,
+  kClientError,
   kClosed,
   kHandler,
   kHttps,
@@ -64,6 +66,8 @@ function createApp(https) {
     passphrase: https.passphrase,
   })
 }
+
+const VALID_METHODS = new Map(METHODS.map(method => [method.toLowerCase(), method]))
 
 const mainServer = {}
 
@@ -211,12 +215,20 @@ export class Server extends EventEmitter {
 
     const app = this[kApp]
 
-    const onRequest = method => (res, req) => {
+    const onRequest = (res, req) => {
+      const method = VALID_METHODS.get(req.getMethod())
       const socket = new HTTPSocket(
         this,
         res,
         method === 'GET' || method === 'HEAD'
       )
+
+      if (!method) {
+        socket[kClientError] = true
+        this.emit('clientError', new ERR_INVALID_METHOD(), socket)
+        return
+      }
+
       const request = new Request(req, socket, method)
       const response = new Response(socket)
       if (request.headers.upgrade) {
@@ -227,16 +239,7 @@ export class Server extends EventEmitter {
       this[kHandler](request, response)
     }
 
-    app
-      .connect('/*', onRequest('CONNECT'))
-      .del('/*', onRequest('DELETE'))
-      .get('/*', onRequest('GET'))
-      .head('/*', onRequest('HEAD'))
-      .options('/*', onRequest('OPTIONS'))
-      .patch('/*', onRequest('PATCH'))
-      .post('/*', onRequest('POST'))
-      .put('/*', onRequest('PUT'))
-      .trace('/*', onRequest('TRACE'))
+    app.any('/*', onRequest)
 
     if (port !== 0 && mainServer[port]) {
       this[kWs] = mainServer[port][kWs]

@@ -7,8 +7,9 @@ import { kHead, kHeaders } from './symbols.js'
 
 class Header {
   constructor(name, value) {
+    this.isMultiValue = Array.isArray(value)
     this.name = name
-    this.value = String(value)
+    this.value = this.isMultiValue ? value : String(value)
   }
 }
 

@@ -1,41 +1,14 @@
-const { once } = require('node:events')
 const path = require('node:path')
 const { Readable } = require('node:stream')
+
 const requireInject = require('require-inject')
 const _sget = require('simple-get').concat
+const tap = require('tap')
 
 const _fastify = require('./module/fastify.js')
 const symbols = require('./module/lib/symbols.js')
 
 const FASTIFY_CWD = path.resolve(__dirname, 'module')
-
-// set on a test object directly, after creation
-
-function requireTap(ignore) {
-  const t = requireInject.withEmptyCache('tap')
-
-  function wrapTest(t) {
-    const _test = t.test
-
-    t.test = (name, cb, ...args) => {
-      if (ignore.includes(name)) {
-        return _test(name, (t) => {
-          t.pass('ignore')
-          t.end()
-        })
-      }
-      return _test(name, (t) => {
-        return cb(wrapTest(t))
-      }, ...args)
-    }
-
-    return t
-  }
-
-  wrapTest(t, true)
-
-  return t
-}
 
 module.exports = async (serverFactory, opts = {}) => {
   const fastify = (opts = {}) => _fastify({
@@ -84,30 +57,64 @@ module.exports = async (serverFactory, opts = {}) => {
 
   const results = {}
 
-  try {
-    for (const test of tests) {
-      const t = requireTap(ignore)
-      const done = once(t, 'end')
+  tap.setTimeout(0)
 
-      requireInject(`./module/test/${test}.test.js`, {
-        './module/fastify.js': fastify,
-        './module/lib/symbols.js': symbols,
-        'simple-get': simpleGet,
-        'tap': t,
+  try {
+    await Promise.all(tests.map(async (test) => {
+      const res = await tap.test(test, { timeout: 120_000 }, (t) => {
+        const runningTests = []
+
+        function wrapTest(t) {
+          const _test = t.test
+
+          t.test = (name, ...args) => {
+            if (ignore.includes(name)) {
+              const runningTest = _test(name, { skip: true }, t => t.end())
+              runningTests.push(runningTest)
+              return runningTest
+            }
+
+            const cbIndex = args.findIndex(arg => typeof arg === 'function')
+            const cb = args[cbIndex]
+            args[cbIndex] = (t) => {
+              return cb(wrapTest(t))
+            }
+            const runningTest = _test(name, ...args)
+            runningTests.push(runningTest)
+            return runningTest
+          }
+
+          return t
+        }
+
+        requireInject(`./module/test/${test}.test.js`, {
+          './module/fastify.js': fastify,
+          './module/lib/symbols.js': symbols,
+          'simple-get': simpleGet,
+          'tap': wrapTest(t),
+        })
+
+        new Promise(resolve => setTimeout(resolve, 5_000)).then(() => Promise.all(runningTests)).finally(() => {
+          if (runningTests.length > 0) {
+            t.end()
+          }
+        })
       })
 
-      await done
-
-      if (t.counts.fail > 0) {
+      if (res.fail > 0) {
         const err = new Error(`error on ${test}`)
-        err.tap = t
+        err.tap = res
         throw err
       }
 
-      results[test] = t.counts
-    }
-
+      results[test] = res
+    }))
     return results
+  } catch (err) {
+    if (err.tap) {
+      console.dir(err.tap, { depth: null })
+    }
+    throw err
   } finally {
     process.cwd = cwd
   }

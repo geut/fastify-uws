@@ -1,5 +1,9 @@
 import nanoerror from 'nanoerror'
 
+export const ERR_INVALID_METHOD = nanoerror(
+  'HPE_INVALID_METHOD',
+  'Invalid method encountered'
+)
 export const ERR_HEAD_SET = nanoerror(
   'ERR_HEAD_SET',
   'Cannot set headers after they are sent to the client'

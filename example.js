@@ -22,8 +22,6 @@ app.websocketServer.on('close', (ws) => {
   console.log('CLOSE')
 })
 
-app.get('/pepe', () => 'hi')
-
 app
   .route({
     method: 'GET',

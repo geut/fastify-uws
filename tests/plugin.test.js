@@ -1,6 +1,6 @@
 import { once } from 'node:events'
-import fastify from 'fastify'
 
+import fastify from 'fastify'
 import sget from 'simple-get'
 import { test } from 'uvu'
 import * as assert from 'uvu/assert'

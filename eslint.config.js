@@ -6,5 +6,6 @@ export default standard({}, {
     'tests/fastify/module/',
     'example.js',
     'types/',
+    'src/fastify-overload.d.ts',
   ],
 })

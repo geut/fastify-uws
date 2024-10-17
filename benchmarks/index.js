@@ -41,8 +41,8 @@ const b = results.get('fastify-uws')
 
 const comp = autocannonCompare(a, b)
 
-console.log(`a: ${a.requests.average}`)
-console.log(`b: ${b.requests.average}`)
+console.log(`${a.name}: ${a.requests.average}`)
+console.log(`${b.name}: ${b.requests.average}`)
 
 if (comp.equal) {
   console.log('Same performance!')
